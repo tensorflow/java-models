@@ -1,0 +1,16 @@
+*.class
+*.jar
+target/
+bin/
+build/
+.idea/
+.idea_modules/
+*.iml
+.settings/
+bin/
+tmp/
+.metadata
+.classpath
+.project
+dist/
+.DS_Store
