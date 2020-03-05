@@ -64,12 +64,28 @@ public class MnistDataset {
     return () -> new ImageBatchIterator(batchSize, validationImages, validationLabels);
   }
 
+  public Iterable<ImageBatch> testBatches(int batchSize) {
+    return () -> new ImageBatchIterator(batchSize, testImages, testLabels);
+  }
+
   public ImageBatch testBatch() {
     return new ImageBatch(testImages, testLabels);
   }
 
   public long imageSize() {
     return imageSize;
+  }
+
+  public long numTrainingExamples() {
+    return trainingLabels.shape().size(0);
+  }
+
+  public long numTestingExamples() {
+    return testLabels.shape().size(0);
+  }
+
+  public long numValidationExamples() {
+    return validationLabels.shape().size(0);
   }
 
   private static final String TRAINING_IMAGES_ARCHIVE = "train-images-idx3-ubyte.gz";
@@ -121,6 +137,6 @@ public class MnistDataset {
     }
     byte[] bytes = new byte[size];
     archiveStream.readFully(bytes);
-    return NdArrays.wrap(DataBuffers.of(bytes, true, false), Shape.of(dimSizes));
+    return NdArrays.wrap(DataBuffers.from(bytes, true, false), Shape.of(dimSizes));
   }
 }
