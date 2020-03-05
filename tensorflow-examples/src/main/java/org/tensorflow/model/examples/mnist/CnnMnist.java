@@ -15,6 +15,9 @@
  */
 package org.tensorflow.model.examples.mnist;
 
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
@@ -36,6 +39,7 @@ import org.tensorflow.op.nn.Relu;
 import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
+import org.tensorflow.tools.Shape;
 import org.tensorflow.tools.ndarray.ByteNdArray;
 import org.tensorflow.tools.ndarray.FloatNdArray;
 import org.tensorflow.tools.ndarray.index.Indices;
@@ -47,26 +51,20 @@ import org.tensorflow.training.optimizers.GradientDescent;
 import org.tensorflow.training.optimizers.Momentum;
 import org.tensorflow.training.optimizers.Optimizer;
 import org.tensorflow.training.optimizers.RMSProp;
-import org.tensorflow.tools.Shape;
 import org.tensorflow.types.TFloat32;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.tensorflow.types.TUint8;
 
 /**
  * Builds a LeNet-5 style CNN for MNIST.
  */
-public class MNISTTest {
+public class CnnMnist {
 
-  private static final Logger logger = Logger.getLogger(MNISTTest.class.getName());
+  private static final Logger logger = Logger.getLogger(CnnMnist.class.getName());
 
   private static final int PIXEL_DEPTH = 255;
   private static final int NUM_CHANNELS = 1;
   private static final int IMAGE_SIZE = 28;
-  private static final int NUM_LABELS = 10;
+  private static final int NUM_LABELS = MnistDataset.NUM_CLASSES;
   private static final long SEED = 123456789L;
 
   private static final String PADDING_TYPE = "SAME";
@@ -85,13 +83,17 @@ public class MNISTTest {
 
     // Inputs
     Placeholder<TUint8> input = tf.withName(INPUT_NAME).placeholder(TUint8.DTYPE,
-        Placeholder.shape(Shape.of(-1, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS)));
+        Placeholder.shape(Shape.of(-1, IMAGE_SIZE, IMAGE_SIZE)));
+    Reshape<TUint8> input_reshaped = tf
+        .reshape(input, tf.array(-1, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS));
     Placeholder<TUint8> labels = tf.withName(TARGET).placeholder(TUint8.DTYPE);
 
     // Scaling the features
     Constant<TFloat32> centeringFactor = tf.val(PIXEL_DEPTH / 2.0f);
     Constant<TFloat32> scalingFactor = tf.val((float) PIXEL_DEPTH);
-    Operand<TFloat32> scaledInput = tf.math.div(tf.math.sub(tf.dtypes.cast(input,TFloat32.DTYPE), centeringFactor), scalingFactor);
+    Operand<TFloat32> scaledInput = tf.math
+        .div(tf.math.sub(tf.dtypes.cast(input_reshaped, TFloat32.DTYPE), centeringFactor),
+            scalingFactor);
 
     // First conv layer
     Variable<TFloat32> conv1Weights = tf.variable(tf.math.mul(tf.random
@@ -209,7 +211,7 @@ public class MNISTTest {
         try (Tensor<TUint8> batchImages = TUint8.tensorOf(trainingBatch.images());
             Tensor<TUint8> batchLabels = TUint8.tensorOf(trainingBatch.labels());
             Tensor<?> loss = session.runner()
-                .feed(OUTPUT_NAME, batchLabels)
+                .feed(TARGET, batchLabels)
                 .feed(INPUT_NAME, batchImages)
                 .addTarget(TRAIN)
                 .fetch(TRAINING_LOSS)
@@ -230,7 +232,6 @@ public class MNISTTest {
     int correctCount = 0;
     int[][] confusionMatrix = new int[10][10];
 
-    int j = 0;
     for (ImageBatch trainingBatch : dataset.testBatches(minibatchSize)) {
       try (Tensor<TUint8> transformedInput = TUint8.tensorOf(trainingBatch.images());
           Tensor<?> outputTensor = session.runner()
@@ -244,18 +245,13 @@ public class MNISTTest {
         byte trueLabel = labelBatch.getByte(k);
         int predLabel;
 
-        predLabel = argmax(prediction.slice(Indices.at(k),Indices.all()));
+        predLabel = argmax(prediction.slice(Indices.at(k), Indices.all()));
         if (predLabel == trueLabel) {
           correctCount++;
         }
 
         confusionMatrix[trueLabel][predLabel]++;
       }
-
-      if (j % 1000 == 0) {
-        logger.log(Level.INFO, "Cur accuracy = " + ((float) correctCount) / (j + minibatchSize));
-      }
-      j += minibatchSize;
     }
 
     logger.info("Final accuracy = " + ((float) correctCount) / dataset.numTestingExamples());
@@ -269,7 +265,7 @@ public class MNISTTest {
 
     for (int i = 0; i < confusionMatrix.length; i++) {
       sb.append(String.format("%1$5s", "" + i));
-      for (j = 0; j < confusionMatrix[i].length; j++) {
+      for (int j = 0; j < confusionMatrix[i].length; j++) {
         sb.append(String.format("%1$5s", "" + confusionMatrix[i][j]));
       }
       sb.append("\n");
@@ -287,7 +283,7 @@ public class MNISTTest {
   public static int argmax(FloatNdArray probabilities) {
     float maxVal = Float.NEGATIVE_INFINITY;
     int idx = 0;
-    for (int i = 0; i < probabilities.shape().size(i); i++) {
+    for (int i = 0; i < probabilities.shape().size(0); i++) {
       float curVal = probabilities.getFloat(i);
       if (curVal > maxVal) {
         maxVal = curVal;
@@ -297,7 +293,7 @@ public class MNISTTest {
     return idx;
   }
 
-  public static void main(String[] args) throws IOException, ClassNotFoundException {
+  public static void main(String[] args) {
     logger.info(
         "Usage: MNISTTest <num-epochs> <minibatch-size> <optimizer-name>");
 
