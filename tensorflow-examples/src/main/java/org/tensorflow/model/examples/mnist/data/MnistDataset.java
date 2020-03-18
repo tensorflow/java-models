@@ -138,6 +138,6 @@ public class MnistDataset {
     }
     byte[] bytes = new byte[size];
     archiveStream.readFully(bytes);
-    return NdArrays.wrap(DataBuffers.from(bytes, true, false), Shape.of(dimSizes));
+    return NdArrays.wrap(DataBuffers.of(bytes, true, false), Shape.of(dimSizes));
   }
 }

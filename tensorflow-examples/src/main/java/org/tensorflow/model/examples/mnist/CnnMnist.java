@@ -210,15 +210,15 @@ public class CnnMnist {
       for (ImageBatch trainingBatch : dataset.trainingBatches(minibatchSize)) {
         try (Tensor<TUint8> batchImages = TUint8.tensorOf(trainingBatch.images());
             Tensor<TUint8> batchLabels = TUint8.tensorOf(trainingBatch.labels());
-            Tensor<?> loss = session.runner()
+            Tensor<TFloat32> loss = session.runner()
                 .feed(TARGET, batchLabels)
                 .feed(INPUT_NAME, batchImages)
                 .addTarget(TRAIN)
                 .fetch(TRAINING_LOSS)
-                .run().get(0)) {
+                .run().get(0).expect(TFloat32.DTYPE)) {
           if (interval % 100 == 0) {
             logger.log(Level.INFO,
-                "Iteration = " + interval + ", training loss = " + loss.floatValue());
+                "Iteration = " + interval + ", training loss = " + loss.data().getFloat());
           }
         }
         interval++;
@@ -227,30 +227,27 @@ public class CnnMnist {
   }
 
   public static void test(Session session, int minibatchSize, MnistDataset dataset) {
-    TFloat32 prediction;
-
     int correctCount = 0;
     int[][] confusionMatrix = new int[10][10];
 
     for (ImageBatch trainingBatch : dataset.testBatches(minibatchSize)) {
       try (Tensor<TUint8> transformedInput = TUint8.tensorOf(trainingBatch.images());
-          Tensor<?> outputTensor = session.runner()
+          Tensor<TFloat32> outputTensor = session.runner()
               .feed(INPUT_NAME, transformedInput)
-              .fetch(OUTPUT_NAME).run().get(0)) {
-        prediction = (TFloat32) outputTensor.data();
-      }
+              .fetch(OUTPUT_NAME).run().get(0).expect(TFloat32.DTYPE)) {
 
-      ByteNdArray labelBatch = trainingBatch.labels();
-      for (int k = 0; k < labelBatch.shape().size(0); k++) {
-        byte trueLabel = labelBatch.getByte(k);
-        int predLabel;
+        ByteNdArray labelBatch = trainingBatch.labels();
+        for (int k = 0; k < labelBatch.shape().size(0); k++) {
+          byte trueLabel = labelBatch.getByte(k);
+          int predLabel;
 
-        predLabel = argmax(prediction.slice(Indices.at(k), Indices.all()));
-        if (predLabel == trueLabel) {
-          correctCount++;
+          predLabel = argmax(outputTensor.data().slice(Indices.at(k), Indices.all()));
+          if (predLabel == trueLabel) {
+            correctCount++;
+          }
+
+          confusionMatrix[trueLabel][predLabel]++;
         }
-
-        confusionMatrix[trueLabel][predLabel]++;
       }
     }
 
