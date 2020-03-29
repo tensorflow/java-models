@@ -1,23 +1,22 @@
 package org.tensorflow.model.examples.mnist;
 
-import java.util.Arrays;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.model.examples.mnist.data.ImageBatch;
 import org.tensorflow.model.examples.mnist.data.MnistDataset;
+import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.Assign;
-import org.tensorflow.op.core.Constant;
-import org.tensorflow.op.core.Gradients;
+import org.tensorflow.op.RawOp;
 import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
-import org.tensorflow.op.train.ApplyGradientDescent;
 import org.tensorflow.tools.Shape;
 import org.tensorflow.tools.ndarray.ByteNdArray;
+import org.tensorflow.training.optimizers.GradientDescent;
+import org.tensorflow.training.optimizers.Optimizer;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 
@@ -42,12 +41,15 @@ public class SimpleMnist implements Runnable {
     // Create weights with an initial value of 0
     Shape weightShape = Shape.of(dataset.imageSize(), MnistDataset.NUM_CLASSES);
     Variable<TFloat32> weights = tf.variable(weightShape, TFloat32.DTYPE);
-    Assign<TFloat32> weightsInit = tf.assign(weights, tf.zerosLike(weights));
+    tf.initAdd(tf.assign(weights, tf.zerosLike(weights)));
 
     // Create biases with an initial value of 0
     Shape biasShape = Shape.of(MnistDataset.NUM_CLASSES);
     Variable<TFloat32> biases = tf.variable(biasShape, TFloat32.DTYPE);
-    Assign<TFloat32> biasesInit = tf.assign(biases, tf.zerosLike(biases));
+    tf.initAdd(tf.assign(biases, tf.zerosLike(biases)));
+
+    // Register all variable initializers for single execution
+    tf.init();
 
     // Predict the class of each image in the batch and compute the loss
     Softmax<TFloat32> softmax =
@@ -69,32 +71,26 @@ public class SimpleMnist implements Runnable {
         );
 
     // Back-propagate gradients to variables for training
-    Gradients gradients = tf.gradients(crossEntropy, Arrays.asList(weights, biases));
-    Constant<TFloat32> alpha = tf.val(LEARNING_RATE);
-    ApplyGradientDescent<TFloat32> weightGradientDescent = tf.train.applyGradientDescent(weights, alpha, gradients.dy(0));
-    ApplyGradientDescent<TFloat32> biasGradientDescent = tf.train.applyGradientDescent(biases, alpha, gradients.dy(1));
+    Optimizer optimizer = new GradientDescent(graph, LEARNING_RATE);
+    Op minimize = optimizer.minimize(crossEntropy);
 
     // Compute the accuracy of the model
-    Operand<TInt64> predicted = tf.math.argMax(softmax, tf.val(1));
-    Operand<TInt64> expected = tf.math.argMax(labels, tf.val(1));
+    Operand<TInt64> predicted = tf.math.argMax(softmax, tf.constant(1));
+    Operand<TInt64> expected = tf.math.argMax(labels, tf.constant(1));
     Operand<TFloat32> accuracy = tf.math.mean(tf.dtypes.cast(tf.math.equal(predicted, expected), TFloat32.DTYPE), tf.array(0));
 
     // Run the graph
     try (Session session = new Session(graph)) {
 
       // Initialize variables
-      session.runner()
-          .addTarget(weightsInit)
-          .addTarget(biasesInit)
-          .run();
+      session.runInit();
 
       // Train the model
       for (ImageBatch trainingBatch : dataset.trainingBatches(TRAINING_BATCH_SIZE)) {
         try (Tensor<TFloat32> batchImages = preprocessImages(trainingBatch.images());
              Tensor<TFloat32> batchLabels = preprocessLabels(trainingBatch.labels())) {
             session.runner()
-                .addTarget(weightGradientDescent)
-                .addTarget(biasGradientDescent)
+                .addTarget(minimize)
                 .feed(images.asOutput(), batchImages)
                 .feed(labels.asOutput(), batchLabels)
                 .run();
@@ -128,10 +124,10 @@ public class SimpleMnist implements Runnable {
     long imageSize = rawImages.get(0).shape().size();
     return tf.math.div(
         tf.reshape(
-            tf.dtypes.cast(tf.val(rawImages), TFloat32.DTYPE),
+            tf.dtypes.cast(tf.constant(rawImages), TFloat32.DTYPE),
             tf.array(-1L, imageSize)
         ),
-        tf.val(255.0f)
+        tf.constant(255.0f)
     ).asTensor();
   }
 
@@ -140,10 +136,10 @@ public class SimpleMnist implements Runnable {
 
     // Map labels to one hot vectors where only the expected predictions as a value of 1.0
     return tf.oneHot(
-        tf.val(rawLabels),
-        tf.val(MnistDataset.NUM_CLASSES),
-        tf.val(1.0f),
-        tf.val(0.0f)
+        tf.constant(rawLabels),
+        tf.constant(MnistDataset.NUM_CLASSES),
+        tf.constant(1.0f),
+        tf.constant(0.0f)
     ).asTensor();
   }
 

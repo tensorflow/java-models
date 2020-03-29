@@ -16,24 +16,13 @@
   <dependencies>
     <dependency>
       <groupId>org.tensorflow</groupId>
-      <artifactId>tensorflow-core-api</artifactId>
+      <artifactId>tensorflow-core-platform</artifactId>
       <version>0.1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.tensorflow</groupId>
-      <artifactId>tensorflow-core-api</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
-      <classifier>macosx-x86_64</classifier>
     </dependency>
     <dependency>
       <groupId>org.tensorflow</groupId>
       <artifactId>tensorflow-training</artifactId>
       <version>0.1.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.tensorflow</groupId>
-      <artifactId>proto</artifactId>
-      <version>1.15.0</version>
     </dependency>
   </dependencies>
   <build>
