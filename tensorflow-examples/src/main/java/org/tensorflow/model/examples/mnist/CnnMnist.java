@@ -308,8 +308,6 @@ public class CnnMnist {
       logger.info("Trained model");
 
       test(session, minibatchSize, dataset);
-
     }
-
   }
 }

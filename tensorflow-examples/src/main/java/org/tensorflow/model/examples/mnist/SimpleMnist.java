@@ -83,7 +83,7 @@ public class SimpleMnist implements Runnable {
     try (Session session = new Session(graph)) {
 
       // Initialize variables
-      session.runInit();
+      session.run(tf.init());
 
       // Train the model
       for (ImageBatch trainingBatch : dataset.trainingBatches(TRAINING_BATCH_SIZE)) {
