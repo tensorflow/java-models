@@ -13,6 +13,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.tensorflow</groupId>
@@ -21,10 +22,21 @@
     </dependency>
     <dependency>
       <groupId>org.tensorflow</groupId>
-      <artifactId>tensorflow-training</artifactId>
+      <artifactId>tensorflow-framework</artifactId>
       <version>0.1.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>tensorflow-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
   <build>
     <plugins>
       <plugin>
