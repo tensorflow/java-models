@@ -14,7 +14,6 @@
  *  limitations under the License.
  *  =======================================================================
  */
-
 package org.tensorflow.model.examples.mnist.data;
 
 import static org.tensorflow.tools.ndarray.index.Indices.from;
