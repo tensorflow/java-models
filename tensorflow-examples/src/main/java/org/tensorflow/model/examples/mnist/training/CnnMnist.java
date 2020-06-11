@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tensorflow.model.examples.mnist;
+package org.tensorflow.model.examples.mnist.training;
 
 import java.util.Arrays;
 import java.util.logging.Level;

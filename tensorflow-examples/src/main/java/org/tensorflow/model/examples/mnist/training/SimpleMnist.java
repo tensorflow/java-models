@@ -14,7 +14,7 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.mnist;
+package org.tensorflow.model.examples.mnist.training;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
@@ -26,15 +26,12 @@ import org.tensorflow.model.examples.mnist.data.ImageBatch;
 import org.tensorflow.model.examples.mnist.data.MnistDataset;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
-import org.tensorflow.op.RawOp;
 import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.tools.Shape;
 import org.tensorflow.tools.ndarray.ByteNdArray;
-import org.tensorflow.framework.optimizers.GradientDescent;
-import org.tensorflow.framework.optimizers.Optimizer;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 
