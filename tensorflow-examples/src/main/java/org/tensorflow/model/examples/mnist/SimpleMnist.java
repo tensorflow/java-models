@@ -14,7 +14,7 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.mnist.training;
+package org.tensorflow.model.examples.mnist;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
