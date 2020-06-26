@@ -15,29 +15,6 @@
  */
 package org.tensorflow.model.examples.fashionmnist;
 
-import org.tensorflow.Graph;
-import org.tensorflow.Operand;
-import org.tensorflow.Session;
-import org.tensorflow.Tensor;
-import org.tensorflow.framework.optimizers.*;
-import org.tensorflow.model.examples.mnist.data.ImageBatch;
-import org.tensorflow.model.examples.mnist.data.MnistDataset;
-import org.tensorflow.op.Op;
-import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.*;
-import org.tensorflow.op.math.Add;
-import org.tensorflow.op.math.Mean;
-import org.tensorflow.op.nn.*;
-import org.tensorflow.op.random.TruncatedNormal;
-import org.tensorflow.tools.Shape;
-import org.tensorflow.tools.ndarray.ByteNdArray;
-import org.tensorflow.tools.ndarray.FloatNdArray;
-import org.tensorflow.tools.ndarray.index.Indices;
-import org.tensorflow.types.TFloat32;
-import org.tensorflow.types.TUint8;
-
-import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -45,7 +22,7 @@ import java.util.logging.Logger;
  */
 public class VGG11OnFashionMNIST {
     // Hyper-parameters
-    public static final int EPOCHS = 2;
+    public static final int EPOCHS = 1;
 
     public static final int BATCH_SIZE = 500;
 
@@ -55,7 +32,7 @@ public class VGG11OnFashionMNIST {
         logger.info("Data loading.");
         FashionMnistDataset dataset = FashionMnistDataset.create(0);
 
-        try(VGGModel vggModel = new VGGModel()) {
+        try (VGGModel vggModel = new VGGModel()) {
             logger.info("Model training.");
             vggModel.train(dataset, EPOCHS, BATCH_SIZE);
 
