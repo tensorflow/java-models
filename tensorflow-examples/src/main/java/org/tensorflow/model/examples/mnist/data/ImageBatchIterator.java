@@ -22,7 +22,7 @@ import java.util.Iterator;
 import org.tensorflow.tools.ndarray.ByteNdArray;
 import org.tensorflow.tools.ndarray.index.Index;
 
-class ImageBatchIterator implements Iterator<ImageBatch> {
+public class ImageBatchIterator implements Iterator<ImageBatch> {
 
   @Override
   public boolean hasNext() {
@@ -37,7 +37,7 @@ class ImageBatchIterator implements Iterator<ImageBatch> {
     return new ImageBatch(images.slice(range), labels.slice(range));
   }
 
-  ImageBatchIterator(int batchSize, ByteNdArray images, ByteNdArray labels) {
+  public ImageBatchIterator(int batchSize, ByteNdArray images, ByteNdArray labels) {
     this.batchSize = batchSize;
     this.images = images;
     this.labels = labels;

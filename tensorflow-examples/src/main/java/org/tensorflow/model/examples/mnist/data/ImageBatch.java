@@ -28,7 +28,7 @@ public class ImageBatch {
     return labels;
   }
 
-  ImageBatch(ByteNdArray images, ByteNdArray labels) {
+  public ImageBatch(ByteNdArray images, ByteNdArray labels) {
     this.images = images;
     this.labels = labels;
   }

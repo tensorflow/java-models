@@ -87,10 +87,10 @@ public class MnistDataset {
     return validationLabels.shape().size(0);
   }
 
-  private static final String TRAINING_IMAGES_ARCHIVE = "train-images-idx3-ubyte.gz";
-  private static final String TRAINING_LABELS_ARCHIVE = "train-labels-idx1-ubyte.gz";
-  private static final String TEST_IMAGES_ARCHIVE = "t10k-images-idx3-ubyte.gz";
-  private static final String TEST_LABELS_ARCHIVE = "t10k-labels-idx1-ubyte.gz";
+  private static final String TRAINING_IMAGES_ARCHIVE = "mnist/train-images-idx3-ubyte.gz";
+  private static final String TRAINING_LABELS_ARCHIVE = "mnist/train-labels-idx1-ubyte.gz";
+  private static final String TEST_IMAGES_ARCHIVE = "mnist/t10k-images-idx3-ubyte.gz";
+  private static final String TEST_LABELS_ARCHIVE = "mnist/t10k-labels-idx1-ubyte.gz";
   private static final int TYPE_UBYTE = 0x08;
 
   private final ByteNdArray trainingImages;
