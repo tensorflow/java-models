@@ -14,7 +14,7 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.mnist.data;
+package org.tensorflow.model.examples.datasets;
 
 import static org.tensorflow.tools.ndarray.index.Indices.range;
 
@@ -22,6 +22,7 @@ import java.util.Iterator;
 import org.tensorflow.tools.ndarray.ByteNdArray;
 import org.tensorflow.tools.ndarray.index.Index;
 
+/** Basic batch iterator across images presented in datset. */
 public class ImageBatchIterator implements Iterator<ImageBatch> {
 
   @Override

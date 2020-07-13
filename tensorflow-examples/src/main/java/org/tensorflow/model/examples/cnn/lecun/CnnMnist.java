@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tensorflow.model.examples.mnist;
+package org.tensorflow.model.examples.cnn.lecun;
 
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -22,8 +22,8 @@ import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
-import org.tensorflow.model.examples.mnist.data.ImageBatch;
-import org.tensorflow.model.examples.mnist.data.MnistDataset;
+import org.tensorflow.model.examples.datasets.ImageBatch;
+import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
@@ -75,6 +75,11 @@ public class CnnMnist {
   public static final String TRAIN = "train";
   public static final String TRAINING_LOSS = "training_loss";
   public static final String INIT = "init";
+
+  private static final String TRAINING_IMAGES_ARCHIVE = "mnist/train-images-idx3-ubyte.gz";
+  private static final String TRAINING_LABELS_ARCHIVE = "mnist/train-labels-idx1-ubyte.gz";
+  private static final String TEST_IMAGES_ARCHIVE = "mnist/t10k-images-idx3-ubyte.gz";
+  private static final String TEST_LABELS_ARCHIVE = "mnist/t10k-labels-idx1-ubyte.gz";
 
   public static Graph build(String optimizerName) {
     Graph graph = new Graph();
@@ -294,7 +299,8 @@ public class CnnMnist {
     logger.info(
         "Usage: MNISTTest <num-epochs> <minibatch-size> <optimizer-name>");
 
-    MnistDataset dataset = MnistDataset.create(0);
+    MnistDataset dataset = MnistDataset.create(0, TRAINING_IMAGES_ARCHIVE, TRAINING_LABELS_ARCHIVE,
+            TEST_IMAGES_ARCHIVE, TEST_LABELS_ARCHIVE);
 
     logger.info("Loaded data.");
 

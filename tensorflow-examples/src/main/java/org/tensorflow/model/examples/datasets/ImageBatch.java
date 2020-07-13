@@ -14,10 +14,11 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.mnist.data;
+package org.tensorflow.model.examples.datasets;
 
 import org.tensorflow.tools.ndarray.ByteNdArray;
 
+/** Batch of images for batch training. */
 public class ImageBatch {
   
   public ByteNdArray images() {

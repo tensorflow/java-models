@@ -14,7 +14,7 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.mnist;
+package org.tensorflow.model.examples.dense;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
@@ -22,8 +22,8 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.framework.optimizers.GradientDescent;
 import org.tensorflow.framework.optimizers.Optimizer;
-import org.tensorflow.model.examples.mnist.data.ImageBatch;
-import org.tensorflow.model.examples.mnist.data.MnistDataset;
+import org.tensorflow.model.examples.datasets.ImageBatch;
+import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Placeholder;
@@ -36,9 +36,15 @@ import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 
 public class SimpleMnist implements Runnable {
+  private static final String TRAINING_IMAGES_ARCHIVE = "mnist/train-images-idx3-ubyte.gz";
+  private static final String TRAINING_LABELS_ARCHIVE = "mnist/train-labels-idx1-ubyte.gz";
+  private static final String TEST_IMAGES_ARCHIVE = "mnist/t10k-images-idx3-ubyte.gz";
+  private static final String TEST_LABELS_ARCHIVE = "mnist/t10k-labels-idx1-ubyte.gz";
 
   public static void main(String[] args) {
-    MnistDataset dataset = MnistDataset.create(VALIDATION_SIZE);
+    MnistDataset dataset = MnistDataset.create(VALIDATION_SIZE, TRAINING_IMAGES_ARCHIVE, TRAINING_LABELS_ARCHIVE,
+            TEST_IMAGES_ARCHIVE, TEST_LABELS_ARCHIVE);
+
     try (Graph graph = new Graph()) {
       SimpleMnist mnist = new SimpleMnist(graph, dataset);
       mnist.run();

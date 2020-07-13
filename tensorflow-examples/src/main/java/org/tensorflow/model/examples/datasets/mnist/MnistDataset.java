@@ -14,29 +14,33 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.mnist.data;
+package org.tensorflow.model.examples.datasets.mnist;
 
-import static org.tensorflow.tools.ndarray.index.Indices.from;
-import static org.tensorflow.tools.ndarray.index.Indices.to;
-
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.zip.GZIPInputStream;
+import org.tensorflow.model.examples.datasets.ImageBatch;
+import org.tensorflow.model.examples.datasets.ImageBatchIterator;
 import org.tensorflow.tools.Shape;
 import org.tensorflow.tools.buffer.DataBuffers;
 import org.tensorflow.tools.ndarray.ByteNdArray;
 import org.tensorflow.tools.ndarray.NdArrays;
 
-public class MnistDataset {
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.zip.GZIPInputStream;
 
+import static org.tensorflow.tools.ndarray.index.Indices.from;
+import static org.tensorflow.tools.ndarray.index.Indices.to;
+
+/** Common loader and data preprocessor for MNIST and FashionMNIST datasets. */
+public class MnistDataset {
   public static final int NUM_CLASSES = 10;
 
-  public static MnistDataset create(int validationSize) {
+  public static MnistDataset create(int validationSize, String trainingImagesArchive, String trainingLabelsArchive,
+                                    String testImagesArchive, String testLabelsArchive) {
     try {
-      ByteNdArray trainingImages = readArchive(TRAINING_IMAGES_ARCHIVE);
-      ByteNdArray trainingLabels = readArchive(TRAINING_LABELS_ARCHIVE);
-      ByteNdArray testImages = readArchive(TEST_IMAGES_ARCHIVE);
-      ByteNdArray testLabels = readArchive(TEST_LABELS_ARCHIVE);
+      ByteNdArray trainingImages = readArchive(trainingImagesArchive);
+      ByteNdArray trainingLabels = readArchive(trainingLabelsArchive);
+      ByteNdArray testImages = readArchive(testImagesArchive);
+      ByteNdArray testLabels = readArchive(testLabelsArchive);
 
       if (validationSize > 0) {
         return new MnistDataset(
@@ -87,10 +91,6 @@ public class MnistDataset {
     return validationLabels.shape().size(0);
   }
 
-  private static final String TRAINING_IMAGES_ARCHIVE = "mnist/train-images-idx3-ubyte.gz";
-  private static final String TRAINING_LABELS_ARCHIVE = "mnist/train-labels-idx1-ubyte.gz";
-  private static final String TEST_IMAGES_ARCHIVE = "mnist/t10k-images-idx3-ubyte.gz";
-  private static final String TEST_LABELS_ARCHIVE = "mnist/t10k-labels-idx1-ubyte.gz";
   private static final int TYPE_UBYTE = 0x08;
 
   private final ByteNdArray trainingImages;

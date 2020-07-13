@@ -14,7 +14,7 @@
  *  limitations under the License.
  *  =======================================================================
  */
-package org.tensorflow.model.examples.fashionmnist;
+package org.tensorflow.model.examples.cnn.vgg;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
@@ -22,12 +22,20 @@ import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 import org.tensorflow.framework.optimizers.Adam;
 import org.tensorflow.framework.optimizers.Optimizer;
-import org.tensorflow.model.examples.mnist.data.ImageBatch;
+import org.tensorflow.model.examples.datasets.ImageBatch;
+import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
 import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.*;
+import org.tensorflow.op.core.Constant;
+import org.tensorflow.op.core.OneHot;
+import org.tensorflow.op.core.Placeholder;
+import org.tensorflow.op.core.Reshape;
+import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Add;
 import org.tensorflow.op.math.Mean;
-import org.tensorflow.op.nn.*;
+import org.tensorflow.op.nn.Conv2d;
+import org.tensorflow.op.nn.MaxPool;
+import org.tensorflow.op.nn.Relu;
+import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
 import org.tensorflow.tools.Shape;
 import org.tensorflow.tools.ndarray.ByteNdArray;
@@ -45,34 +53,24 @@ import java.util.logging.Logger;
  */
 public class VGGModel implements AutoCloseable {
     private static final int PIXEL_DEPTH = 255;
-
     private static final int NUM_CHANNELS = 1;
-
     private static final int IMAGE_SIZE = 28;
-
-    private static final int NUM_LABELS = FashionMnistDataset.NUM_CLASSES;
-
+    private static final int NUM_LABELS = MnistDataset.NUM_CLASSES;
     private static final long SEED = 123456789L;
 
     private static final String PADDING_TYPE = "SAME";
-
     public static final String INPUT_NAME = "input";
-
     public static final String OUTPUT_NAME = "output";
-
     public static final String TARGET = "target";
-
     public static final String TRAIN = "train";
-
     public static final String TRAINING_LOSS = "training_loss";
-
     public static final String INIT = "init";
 
     private static final Logger logger = Logger.getLogger(VGGModel.class.getName());
 
-    private Graph graph;
+    private final Graph graph;
 
-    private Session session;
+    private final Session session;
 
     public VGGModel() {
         graph = compile();
@@ -194,7 +192,7 @@ public class VGGModel implements AutoCloseable {
         return tf.nn.relu(tf.withName("biasAdd_" + layerName).nn.biasAdd(conv, convBias));
     }
 
-    public void train(FashionMnistDataset dataset, int epochs, int minibatchSize) {
+    public void train(MnistDataset dataset, int epochs, int minibatchSize) {
         // Initialises the parameters.
         session.runner().addTarget(INIT).run();
         logger.info("Initialised the model parameters");
@@ -221,7 +219,7 @@ public class VGGModel implements AutoCloseable {
         }
     }
 
-    public void test(FashionMnistDataset dataset, int minibatchSize) {
+    public void test(MnistDataset dataset, int minibatchSize) {
         int correctCount = 0;
         int[][] confusionMatrix = new int[10][10];
 

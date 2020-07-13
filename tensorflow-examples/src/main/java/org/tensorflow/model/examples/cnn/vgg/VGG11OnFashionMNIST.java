@@ -13,24 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tensorflow.model.examples.fashionmnist;
+package org.tensorflow.model.examples.cnn.vgg;
+
+import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
 
 import java.util.logging.Logger;
 
 /**
- * Builds a VGG'11 model for MNIST.
+ * Trains and evaluates VGG'11 model on FashionMNIST dataset.
  */
 public class VGG11OnFashionMNIST {
     // Hyper-parameters
     public static final int EPOCHS = 1;
-
     public static final int BATCH_SIZE = 500;
+
+    // Fashion MNIST dataset paths
+    public static final String TRAINING_IMAGES_ARCHIVE = "fashionmnist/train-images-idx3-ubyte.gz";
+    public static final String TRAINING_LABELS_ARCHIVE = "fashionmnist/train-labels-idx1-ubyte.gz";
+    public static final String TEST_IMAGES_ARCHIVE = "fashionmnist/t10k-images-idx3-ubyte.gz";
+    public static final String TEST_LABELS_ARCHIVE = "fashionmnist/t10k-labels-idx1-ubyte.gz";
 
     private static final Logger logger = Logger.getLogger(VGG11OnFashionMNIST.class.getName());
 
     public static void main(String[] args) {
         logger.info("Data loading.");
-        FashionMnistDataset dataset = FashionMnistDataset.create(0);
+        MnistDataset dataset = MnistDataset.create(0, TRAINING_IMAGES_ARCHIVE, TRAINING_LABELS_ARCHIVE, TEST_IMAGES_ARCHIVE, TEST_LABELS_ARCHIVE);
 
         try (VGGModel vggModel = new VGGModel()) {
             logger.info("Model training.");
