@@ -23,8 +23,12 @@ import org.tensorflow.framework.optimizers.GradientDescent;
 import org.tensorflow.framework.optimizers.Optimizer;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
-import org.tensorflow.op.core.*;
-import org.tensorflow.op.math.*;
+import org.tensorflow.op.core.Placeholder;
+import org.tensorflow.op.core.Variable;
+import org.tensorflow.op.math.Add;
+import org.tensorflow.op.math.Div;
+import org.tensorflow.op.math.Mul;
+import org.tensorflow.op.math.Pow;
 import org.tensorflow.tools.Shape;
 import org.tensorflow.types.TFloat32;
 
@@ -46,7 +50,6 @@ public class LinearRegressionExample {
     /**
      * This value is used to fill the Y placeholder in prediction.
      */
-    private static final float NO_MEANING_VALUE_TO_PUT_IN_PLACEHOLDER = 2000f;
     public static final float LEARNING_RATE = 0.1f;
     public static final String WEIGHT_VARIABLE_NAME = "weight";
     public static final String BIAS_VARIABLE_NAME = "bias";

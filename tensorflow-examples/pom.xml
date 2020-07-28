@@ -52,7 +52,7 @@
               <archive>
                 <manifest>
                   <mainClass>
-                    org.tensorflow.model.examples.mnist.SimpleMnist
+                      org.tensorflow.model.examples.dense.SimpleMnist
                   </mainClass>
                 </manifest>
               </archive>
