@@ -29,7 +29,7 @@ import org.tensorflow.op.math.Add;
 import org.tensorflow.op.math.Div;
 import org.tensorflow.op.math.Mul;
 import org.tensorflow.op.math.Pow;
-import org.tensorflow.tools.Shape;
+import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
 
 import java.util.List;

@@ -18,17 +18,17 @@ package org.tensorflow.model.examples.datasets.mnist;
 
 import org.tensorflow.model.examples.datasets.ImageBatch;
 import org.tensorflow.model.examples.datasets.ImageBatchIterator;
-import org.tensorflow.tools.Shape;
-import org.tensorflow.tools.buffer.DataBuffers;
-import org.tensorflow.tools.ndarray.ByteNdArray;
-import org.tensorflow.tools.ndarray.NdArrays;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.buffer.DataBuffers;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.NdArrays;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
-import static org.tensorflow.tools.ndarray.index.Indices.from;
-import static org.tensorflow.tools.ndarray.index.Indices.to;
+import static org.tensorflow.ndarray.index.Indices.from;
+import static org.tensorflow.ndarray.index.Indices.to;
 
 /** Common loader and data preprocessor for MNIST and FashionMNIST datasets. */
 public class MnistDataset {

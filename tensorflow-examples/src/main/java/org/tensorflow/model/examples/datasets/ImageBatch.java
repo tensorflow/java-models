@@ -16,7 +16,7 @@
  */
 package org.tensorflow.model.examples.datasets;
 
-import org.tensorflow.tools.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.ByteNdArray;
 
 /** Batch of images for batch training. */
 public class ImageBatch {

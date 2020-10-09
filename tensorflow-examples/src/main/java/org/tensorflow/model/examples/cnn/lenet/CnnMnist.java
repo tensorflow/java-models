@@ -40,10 +40,10 @@ import org.tensorflow.op.nn.Relu;
 import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
-import org.tensorflow.tools.Shape;
-import org.tensorflow.tools.ndarray.ByteNdArray;
-import org.tensorflow.tools.ndarray.FloatNdArray;
-import org.tensorflow.tools.ndarray.index.Indices;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.FloatNdArray;
+import org.tensorflow.ndarray.index.Indices;
 import org.tensorflow.framework.optimizers.AdaDelta;
 import org.tensorflow.framework.optimizers.AdaGrad;
 import org.tensorflow.framework.optimizers.AdaGradDA;
@@ -160,9 +160,9 @@ public class CnnMnist {
     // Loss function & regularization
     OneHot<TFloat32> oneHot = tf
         .oneHot(labels, tf.constant(10), tf.constant(1.0f), tf.constant(0.0f));
-    SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn
-        .softmaxCrossEntropyWithLogits(logits, oneHot);
-    Mean<TFloat32> labelLoss = tf.math.mean(batchLoss.loss(), tf.constant(0));
+    Operand<TFloat32> batchLoss = tf.nn
+        .softmaxCrossEntropyWithLogits(logits, oneHot, -1);
+    Mean<TFloat32> labelLoss = tf.math.mean(batchLoss, tf.constant(0));
     Add<TFloat32> regularizers = tf.math.add(tf.nn.l2Loss(fc1Weights), tf.math
         .add(tf.nn.l2Loss(fc1Biases),
             tf.math.add(tf.nn.l2Loss(fc2Weights), tf.nn.l2Loss(fc2Biases))));

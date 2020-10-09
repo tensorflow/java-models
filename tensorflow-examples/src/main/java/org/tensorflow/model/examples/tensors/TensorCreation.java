@@ -17,9 +17,9 @@
 package org.tensorflow.model.examples.tensors;
 
 import org.tensorflow.Tensor;
-import org.tensorflow.tools.Shape;
-import org.tensorflow.tools.ndarray.IntNdArray;
-import org.tensorflow.tools.ndarray.NdArrays;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.IntNdArray;
+import org.tensorflow.ndarray.NdArrays;
 import org.tensorflow.types.TInt32;
 
 import java.util.Arrays;
