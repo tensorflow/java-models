@@ -16,11 +16,13 @@
  */
 package org.tensorflow.model.examples.datasets;
 
-import static org.tensorflow.tools.ndarray.index.Indices.range;
+import static org.tensorflow.ndarray.index.Indices.range;
 
 import java.util.Iterator;
-import org.tensorflow.tools.ndarray.ByteNdArray;
-import org.tensorflow.tools.ndarray.index.Index;
+
+import org.tensorflow.ndarray.index.Index;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.index.Index;
 
 /** Basic batch iterator across images presented in datset. */
 public class ImageBatchIterator implements Iterator<ImageBatch> {

@@ -30,8 +30,8 @@ import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
-import org.tensorflow.tools.Shape;
-import org.tensorflow.tools.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.ByteNdArray;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 

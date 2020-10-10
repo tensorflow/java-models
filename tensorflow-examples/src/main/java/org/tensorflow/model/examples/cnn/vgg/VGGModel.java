@@ -35,12 +35,12 @@ import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Conv2d;
 import org.tensorflow.op.nn.MaxPool;
 import org.tensorflow.op.nn.Relu;
-import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
+import org.tensorflow.op.nn.raw.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
-import org.tensorflow.tools.Shape;
-import org.tensorflow.tools.ndarray.ByteNdArray;
-import org.tensorflow.tools.ndarray.FloatNdArray;
-import org.tensorflow.tools.ndarray.index.Indices;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.FloatNdArray;
+import org.tensorflow.ndarray.index.Indices;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TUint8;
 
@@ -159,7 +159,7 @@ public class VGGModel implements AutoCloseable {
         // Loss function & regularization
         OneHot<TFloat32> oneHot = tf
                 .oneHot(labels, tf.constant(10), tf.constant(1.0f), tf.constant(0.0f));
-        SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn
+        SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.raw
                 .softmaxCrossEntropyWithLogits(logits, oneHot);
         Mean<TFloat32> labelLoss = tf.math.mean(batchLoss.loss(), tf.constant(0));
         Add<TFloat32> regularizers = tf.math.add(tf.nn.l2Loss(fc1Weights), tf.math
