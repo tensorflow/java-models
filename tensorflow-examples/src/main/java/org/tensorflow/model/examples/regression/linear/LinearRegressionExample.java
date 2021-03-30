@@ -69,8 +69,8 @@ public class LinearRegressionExample {
             Ops tf = Ops.create(graph);
 
             // Define placeholders
-            Placeholder<TFloat32> xData = tf.placeholder(TFloat32.DTYPE, Placeholder.shape(Shape.scalar()));
-            Placeholder<TFloat32> yData = tf.placeholder(TFloat32.DTYPE, Placeholder.shape(Shape.scalar()));
+            Placeholder<TFloat32> xData = tf.placeholder(TFloat32.class, Placeholder.shape(Shape.scalar()));
+            Placeholder<TFloat32> yData = tf.placeholder(TFloat32.class, Placeholder.shape(Shape.scalar()));
 
             // Define variables
             Variable<TFloat32> weight = tf.withName(WEIGHT_VARIABLE_NAME).variable(tf.constant(1f));
@@ -97,8 +97,8 @@ public class LinearRegressionExample {
                     float y = yValues[i];
                     float x = xValues[i];
 
-                    try (Tensor<TFloat32> xTensor = TFloat32.scalarOf(x);
-                         Tensor<TFloat32> yTensor = TFloat32.scalarOf(y)) {
+                    try (TFloat32 xTensor = TFloat32.scalarOf(x);
+                         TFloat32 yTensor = TFloat32.scalarOf(y)) {
 
                         session.runner()
                                 .addTarget(minimize)
@@ -112,31 +112,31 @@ public class LinearRegressionExample {
                 }
 
                 // Extract linear regression model weight and bias values
-                List<Tensor<?>> tensorList = session.runner()
+                List<?> tensorList = session.runner()
                         .fetch(WEIGHT_VARIABLE_NAME)
                         .fetch(BIAS_VARIABLE_NAME)
                         .run();
 
-                try (Tensor<TFloat32> weightValue = tensorList.get(0).expect(TFloat32.DTYPE);
-                     Tensor<TFloat32> biasValue = tensorList.get(1).expect(TFloat32.DTYPE)) {
+                try (TFloat32 weightValue = (TFloat32)tensorList.get(0);
+                     TFloat32 biasValue = (TFloat32)tensorList.get(1)) {
 
-                    System.out.println("Weight is " + weightValue.data().getFloat());
-                    System.out.println("Bias is " + biasValue.data().getFloat());
+                    System.out.println("Weight is " + weightValue.getFloat());
+                    System.out.println("Bias is " + biasValue.getFloat());
                 }
 
                 // Let's predict y for x = 10f
                 float x = 10f;
                 float predictedY = 0f;
 
-                try (Tensor<TFloat32> xTensor = TFloat32.scalarOf(x);
-                     Tensor<TFloat32> yTensor = TFloat32.scalarOf(predictedY);
-                     Tensor<TFloat32> yPredictedTensor = session.runner()
+                try (TFloat32 xTensor = TFloat32.scalarOf(x);
+                     TFloat32 yTensor = TFloat32.scalarOf(predictedY);
+                     TFloat32 yPredictedTensor = (TFloat32)session.runner()
                              .feed(xData.asOutput(), xTensor)
                              .feed(yData.asOutput(), yTensor)
                              .fetch(yPredicted)
-                             .run().get(0).expect(TFloat32.DTYPE)) {
+                             .run().get(0)) {
 
-                    predictedY = yPredictedTensor.data().getFloat();
+                    predictedY = yPredictedTensor.getFloat();
 
                     System.out.println("Predicted value: " + predictedY);
                 }

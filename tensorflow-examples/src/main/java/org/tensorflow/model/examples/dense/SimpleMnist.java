@@ -56,17 +56,17 @@ public class SimpleMnist implements Runnable {
     Ops tf = Ops.create(graph);
     
     // Create placeholders and variables, which should fit batches of an unknown number of images
-    Placeholder<TFloat32> images = tf.placeholder(TFloat32.DTYPE);
-    Placeholder<TFloat32> labels = tf.placeholder(TFloat32.DTYPE);
+    Placeholder<TFloat32> images = tf.placeholder(TFloat32.class);
+    Placeholder<TFloat32> labels = tf.placeholder(TFloat32.class);
 
     // Create weights with an initial value of 0
     Shape weightShape = Shape.of(dataset.imageSize(), MnistDataset.NUM_CLASSES);
-    Variable<TFloat32> weights = tf.variable(weightShape, TFloat32.DTYPE);
+    Variable<TFloat32> weights = tf.variable(weightShape, TFloat32.class);
     tf.initAdd(tf.assign(weights, tf.zerosLike(weights)));
 
     // Create biases with an initial value of 0
     Shape biasShape = Shape.of(MnistDataset.NUM_CLASSES);
-    Variable<TFloat32> biases = tf.variable(biasShape, TFloat32.DTYPE);
+    Variable<TFloat32> biases = tf.variable(biasShape, TFloat32.class);
     tf.initAdd(tf.assign(biases, tf.zerosLike(biases)));
 
     // Register all variable initializers for single execution
@@ -98,7 +98,7 @@ public class SimpleMnist implements Runnable {
     // Compute the accuracy of the model
     Operand<TInt64> predicted = tf.math.argMax(softmax, tf.constant(1));
     Operand<TInt64> expected = tf.math.argMax(labels, tf.constant(1));
-    Operand<TFloat32> accuracy = tf.math.mean(tf.dtypes.cast(tf.math.equal(predicted, expected), TFloat32.DTYPE), tf.array(0));
+    Operand<TFloat32> accuracy = tf.math.mean(tf.dtypes.cast(tf.math.equal(predicted, expected), TFloat32.class), tf.array(0));
 
     // Run the graph
     try (Session session = new Session(graph)) {
@@ -108,8 +108,8 @@ public class SimpleMnist implements Runnable {
 
       // Train the model
       for (ImageBatch trainingBatch : dataset.trainingBatches(TRAINING_BATCH_SIZE)) {
-        try (Tensor<TFloat32> batchImages = preprocessImages(trainingBatch.images());
-             Tensor<TFloat32> batchLabels = preprocessLabels(trainingBatch.labels())) {
+        try (TFloat32 batchImages = preprocessImages(trainingBatch.images());
+             TFloat32 batchLabels = preprocessLabels(trainingBatch.labels())) {
             session.runner()
                 .addTarget(minimize)
                 .feed(images.asOutput(), batchImages)
@@ -120,16 +120,15 @@ public class SimpleMnist implements Runnable {
 
       // Test the model
       ImageBatch testBatch = dataset.testBatch();
-      try (Tensor<TFloat32> testImages = preprocessImages(testBatch.images());
-           Tensor<TFloat32> testLabels = preprocessLabels(testBatch.labels());
-           Tensor<TFloat32> accuracyValue = session.runner()
+      try (TFloat32 testImages = preprocessImages(testBatch.images());
+           TFloat32 testLabels = preprocessLabels(testBatch.labels());
+           TFloat32 accuracyValue = (TFloat32)session.runner()
               .fetch(accuracy)
               .feed(images.asOutput(), testImages)
               .feed(labels.asOutput(), testLabels)
               .run()
-              .get(0)
-              .expect(TFloat32.DTYPE)) {
-        System.out.println("Accuracy: " + accuracyValue.data().getFloat());
+              .get(0)) {
+        System.out.println("Accuracy: " + accuracyValue.getFloat());
       }
     }
   }
@@ -138,21 +137,21 @@ public class SimpleMnist implements Runnable {
   private static final int TRAINING_BATCH_SIZE = 100;
   private static final float LEARNING_RATE = 0.2f;
 
-  private static Tensor<TFloat32> preprocessImages(ByteNdArray rawImages) {
+  private static TFloat32 preprocessImages(ByteNdArray rawImages) {
     Ops tf = Ops.create();
 
     // Flatten images in a single dimension and normalize their pixels as floats.
     long imageSize = rawImages.get(0).shape().size();
     return tf.math.div(
         tf.reshape(
-            tf.dtypes.cast(tf.constant(rawImages), TFloat32.DTYPE),
+            tf.dtypes.cast(tf.constant(rawImages), TFloat32.class),
             tf.array(-1L, imageSize)
         ),
         tf.constant(255.0f)
     ).asTensor();
   }
 
-  private static Tensor<TFloat32> preprocessLabels(ByteNdArray rawLabels) {
+  private static TFloat32 preprocessLabels(ByteNdArray rawLabels) {
     Ops tf = Ops.create();
 
     // Map labels to one hot vectors where only the expected predictions as a value of 1.0

@@ -88,22 +88,22 @@ public class CnnMnist {
     Ops tf = Ops.create(graph);
 
     // Inputs
-    Placeholder<TUint8> input = tf.withName(INPUT_NAME).placeholder(TUint8.DTYPE,
+    Placeholder<TUint8> input = tf.withName(INPUT_NAME).placeholder(TUint8.class,
         Placeholder.shape(Shape.of(-1, IMAGE_SIZE, IMAGE_SIZE)));
     Reshape<TUint8> input_reshaped = tf
         .reshape(input, tf.array(-1, IMAGE_SIZE, IMAGE_SIZE, NUM_CHANNELS));
-    Placeholder<TUint8> labels = tf.withName(TARGET).placeholder(TUint8.DTYPE);
+    Placeholder<TUint8> labels = tf.withName(TARGET).placeholder(TUint8.class);
 
     // Scaling the features
     Constant<TFloat32> centeringFactor = tf.constant(PIXEL_DEPTH / 2.0f);
     Constant<TFloat32> scalingFactor = tf.constant((float) PIXEL_DEPTH);
     Operand<TFloat32> scaledInput = tf.math
-        .div(tf.math.sub(tf.dtypes.cast(input_reshaped, TFloat32.DTYPE), centeringFactor),
+        .div(tf.math.sub(tf.dtypes.cast(input_reshaped, TFloat32.class), centeringFactor),
             scalingFactor);
 
     // First conv layer
     Variable<TFloat32> conv1Weights = tf.variable(tf.math.mul(tf.random
-        .truncatedNormal(tf.array(5, 5, NUM_CHANNELS, 32), TFloat32.DTYPE,
+        .truncatedNormal(tf.array(5, 5, NUM_CHANNELS, 32), TFloat32.class,
             TruncatedNormal.seed(SEED)), tf.constant(0.1f)));
     Conv2d<TFloat32> conv1 = tf.nn
         .conv2d(scaledInput, conv1Weights, Arrays.asList(1L, 1L, 1L, 1L), PADDING_TYPE);
@@ -118,7 +118,7 @@ public class CnnMnist {
 
     // Second conv layer
     Variable<TFloat32> conv2Weights = tf.variable(tf.math.mul(tf.random
-        .truncatedNormal(tf.array(5, 5, 32, 64), TFloat32.DTYPE,
+        .truncatedNormal(tf.array(5, 5, 32, 64), TFloat32.class,
             TruncatedNormal.seed(SEED)), tf.constant(0.1f)));
     Conv2d<TFloat32> conv2 = tf.nn
         .conv2d(pool1, conv2Weights, Arrays.asList(1L, 1L, 1L, 1L), PADDING_TYPE);
@@ -138,7 +138,7 @@ public class CnnMnist {
 
     // Fully connected layer
     Variable<TFloat32> fc1Weights = tf.variable(tf.math.mul(tf.random
-        .truncatedNormal(tf.array(IMAGE_SIZE * IMAGE_SIZE * 4, 512), TFloat32.DTYPE,
+        .truncatedNormal(tf.array(IMAGE_SIZE * IMAGE_SIZE * 4, 512), TFloat32.class,
             TruncatedNormal.seed(SEED)), tf.constant(0.1f)));
     Variable<TFloat32> fc1Biases = tf
         .variable(tf.fill(tf.array(new int[]{512}), tf.constant(0.1f)));
@@ -147,7 +147,7 @@ public class CnnMnist {
 
     // Softmax layer
     Variable<TFloat32> fc2Weights = tf.variable(tf.math.mul(tf.random
-        .truncatedNormal(tf.array(512, NUM_LABELS), TFloat32.DTYPE,
+        .truncatedNormal(tf.array(512, NUM_LABELS), TFloat32.class,
             TruncatedNormal.seed(SEED)), tf.constant(0.1f)));
     Variable<TFloat32> fc2Biases = tf
         .variable(tf.fill(tf.array(new int[]{NUM_LABELS}), tf.constant(0.1f)));
@@ -214,17 +214,17 @@ public class CnnMnist {
     // Train the model
     for (int i = 0; i < epochs; i++) {
       for (ImageBatch trainingBatch : dataset.trainingBatches(minibatchSize)) {
-        try (Tensor<TUint8> batchImages = TUint8.tensorOf(trainingBatch.images());
-            Tensor<TUint8> batchLabels = TUint8.tensorOf(trainingBatch.labels());
-            Tensor<TFloat32> loss = session.runner()
+        try (TUint8 batchImages = TUint8.tensorOf(trainingBatch.images());
+            TUint8 batchLabels = TUint8.tensorOf(trainingBatch.labels());
+            TFloat32 loss = (TFloat32)session.runner()
                 .feed(TARGET, batchLabels)
                 .feed(INPUT_NAME, batchImages)
                 .addTarget(TRAIN)
                 .fetch(TRAINING_LOSS)
-                .run().get(0).expect(TFloat32.DTYPE)) {
+                .run().get(0)) {
           if (interval % 100 == 0) {
             logger.log(Level.INFO,
-                "Iteration = " + interval + ", training loss = " + loss.data().getFloat());
+                "Iteration = " + interval + ", training loss = " + loss.getFloat());
           }
         }
         interval++;
@@ -237,17 +237,17 @@ public class CnnMnist {
     int[][] confusionMatrix = new int[10][10];
 
     for (ImageBatch trainingBatch : dataset.testBatches(minibatchSize)) {
-      try (Tensor<TUint8> transformedInput = TUint8.tensorOf(trainingBatch.images());
-          Tensor<TFloat32> outputTensor = session.runner()
+      try (TUint8 transformedInput = TUint8.tensorOf(trainingBatch.images());
+          TFloat32 outputTensor = (TFloat32)session.runner()
               .feed(INPUT_NAME, transformedInput)
-              .fetch(OUTPUT_NAME).run().get(0).expect(TFloat32.DTYPE)) {
+              .fetch(OUTPUT_NAME).run().get(0)) {
 
         ByteNdArray labelBatch = trainingBatch.labels();
         for (int k = 0; k < labelBatch.shape().size(0); k++) {
           byte trueLabel = labelBatch.getByte(k);
           int predLabel;
 
-          predLabel = argmax(outputTensor.data().slice(Indices.at(k), Indices.all()));
+          predLabel = argmax(outputTensor.slice(Indices.at(k), Indices.all()));
           if (predLabel == trueLabel) {
             correctCount++;
           }

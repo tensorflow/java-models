@@ -27,8 +27,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
-import static org.tensorflow.ndarray.index.Indices.from;
-import static org.tensorflow.ndarray.index.Indices.to;
+import static org.tensorflow.ndarray.index.Indices.sliceFrom;
+import static org.tensorflow.ndarray.index.Indices.sliceTo;
 
 /** Common loader and data preprocessor for MNIST and FashionMNIST datasets. */
 public class MnistDataset {
@@ -44,10 +44,10 @@ public class MnistDataset {
 
       if (validationSize > 0) {
         return new MnistDataset(
-            trainingImages.slice(from(validationSize)),
-            trainingLabels.slice(from(validationSize)),
-            trainingImages.slice(to(validationSize)),
-            trainingLabels.slice(to(validationSize)),
+            trainingImages.slice(sliceFrom(validationSize)),
+            trainingLabels.slice(sliceFrom(validationSize)),
+            trainingImages.slice(sliceTo(validationSize)),
+            trainingLabels.slice(sliceTo(validationSize)),
             testImages,
             testLabels
         );
@@ -137,6 +137,6 @@ public class MnistDataset {
     }
     byte[] bytes = new byte[size];
     archiveStream.readFully(bytes);
-    return NdArrays.wrap(DataBuffers.of(bytes, true, false), Shape.of(dimSizes));
+    return NdArrays.wrap(Shape.of(dimSizes), DataBuffers.of(bytes, true, false));
   }
 }
