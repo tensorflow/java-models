@@ -229,19 +229,16 @@ public class FasterRcnnInception {
 
     public static void main(String[] params) {
 
-        if (params.length != 2 ){
+        if (params.length != 2) {
             throw new IllegalArgumentException("Exactly 2 parameters required !");
         }
-
         //my test image
-        String outputImagePath  = params[1];
+        String outputImagePath = params[1];
         String imagePath = params[0];
-
         // get path to model folder
         String modelPath = "models/faster_rcnn_inception_resnet_v2_1024x1024";
         // load saved model
         SavedModelBundle model = SavedModelBundle.load(modelPath, "serve");
-
         //create a map of the COCO 2017 labels
         TreeMap<Float, String> cocoTreeMap = new TreeMap<>();
         float cocoCount = 0;
@@ -250,93 +247,80 @@ public class FasterRcnnInception {
             cocoCount++;
         }
         try (Graph g = new Graph(); Session s = new Session(g)) {
-
             Ops tf = Ops.create(g);
-
-
-
-
             Constant<TString> fileName = tf.constant(imagePath);
-
             ReadFile readFile = tf.io.readFile(fileName);
-
             Session.Runner runner = s.runner();
             s.run(tf.init());
-
             DecodeJpeg.Options options = DecodeJpeg.channels(3L);
             DecodeJpeg decodeImage = tf.image.decodeJpeg(readFile.contents(), options);
-
             //fetch image from file
-            TUint8 outputImage = (TUint8) runner.fetch(decodeImage).run().get(0);
-            Shape imageShape = outputImage.shape();
-            //dimensions of test image
-            long[] shapeArray = imageShape.asArray();
-            //reshape the tensor to 4D for input to model
-            Reshape<TUint8> reshape = tf.reshape(tf.constant(outputImage),
-                    tf.array(1,
-                            outputImage.shape().asArray()[0],
-                            outputImage.shape().asArray()[1],
-                            outputImage.shape().asArray()[2]
-                    )
-            );
-
-            //fresh runner for reshape
-            runner = s.runner();
-            s.run(tf.init());
-            TUint8 reshapeTensor = (TUint8) runner.fetch(reshape).run().get(0);
-            Map<String, Tensor> feedDict = new HashMap<>();
-            //The given SavedModel SignatureDef input
-            feedDict.put("input_tensor", reshapeTensor);
-            //The given SavedModel MetaGraphDef key
-            Map<String, Tensor> outputTensorMap = model.function("serving_default").call(feedDict);
-            //detection_classes is a model output name
-            TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
-            TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
-            TFloat32 numDetections = (TFloat32) outputTensorMap.get("num_detections");
-            TFloat32 detectionScores = (TFloat32) outputTensorMap.get("detection_scores");
-
-            int numDetects = (int) numDetections.getFloat(0);
-            if (numDetects > 0) {
-                try {
-                    BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
-                    Graphics2D graphics2D = bufferedImage.createGraphics();
-
-                    //TODO tf.image.combinedNonMaxSuppression
-                    for (int n = 0; n < numDetects; n++) {
-                        //put probability and position in outputMap
-                        float detectionScore = detectionScores.getFloat(0, n);
-                        //only include those classes with detection score greater than 0.3f
-                        if (detectionScore > 0.3f) {
-                            float classVal = detectionClasses.getFloat(0, n);
-                            //TODO tf.image.drawBoundingBoxes
-                            int x1 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 1));
-                            int y1 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 0));
-                            int x2 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 3));
-                            int y2 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 2));
-                            graphics2D.setPaint(Color.RED);
-                            graphics2D.setStroke(new BasicStroke(5));
-                            graphics2D.drawRect(x1, y1, x2 - x1, y2 - y1);
-                            graphics2D.setPaint(Color.BLACK);
-                            //add a label with percentage score
-                            graphics2D.drawString(cocoTreeMap.get(classVal - 1) + " " +
-                                    (new DecimalFormat("#.##").format(detectionScore * 100)) +
-                                    "%", x1, y1);
+            try (TUint8 outputImage = (TUint8) runner.fetch(decodeImage).run().get(0)) {
+                Shape imageShape = outputImage.shape();
+                //dimensions of test image
+                long[] shapeArray = imageShape.asArray();
+                //reshape the tensor to 4D for input to model
+                Reshape<TUint8> reshape = tf.reshape(tf.constant(outputImage),
+                        tf.array(1,
+                                outputImage.shape().asArray()[0],
+                                outputImage.shape().asArray()[1],
+                                outputImage.shape().asArray()[2]
+                        )
+                );
+                //fresh runner for reshape
+                runner = s.runner();
+                s.run(tf.init());
+                try (TUint8 reshapeTensor = (TUint8) runner.fetch(reshape).run().get(0)) {
+                    Map<String, Tensor> feedDict = new HashMap<>();
+                    //The given SavedModel SignatureDef input
+                    feedDict.put("input_tensor", reshapeTensor);
+                    //The given SavedModel MetaGraphDef key
+                    Map<String, Tensor> outputTensorMap = model.function("serving_default").call(feedDict);
+                    //detection_classes, detectionBoxes etc. are model output names
+                    try (TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
+                         TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
+                         TFloat32 rawDetectionBoxes = (TFloat32) outputTensorMap.get("raw_detection_boxes");
+                         TFloat32 numDetections = (TFloat32) outputTensorMap.get("num_detections");
+                         TFloat32 detectionScores = (TFloat32) outputTensorMap.get("detection_scores");
+                         TFloat32 rawDetectionScores = (TFloat32) outputTensorMap.get("raw_detection_scores");
+                         TFloat32 detectionAnchorIndices = (TFloat32) outputTensorMap.get("detection_anchor_indices");
+                         TFloat32 detectionMulticlassScores = (TFloat32) outputTensorMap.get("detection_multiclass_scores")) {
+                        int numDetects = (int) numDetections.getFloat(0);
+                        if (numDetects > 0) {
+                            try {
+                                BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
+                                Graphics2D graphics2D = bufferedImage.createGraphics();
+                                //TODO tf.image.combinedNonMaxSuppression
+                                for (int n = 0; n < numDetects; n++) {
+                                    //put probability and position in outputMap
+                                    float detectionScore = detectionScores.getFloat(0, n);
+                                    //only include those classes with detection score greater than 0.3f
+                                    if (detectionScore > 0.3f) {
+                                        float classVal = detectionClasses.getFloat(0, n);
+                                        //TODO tf.image.drawBoundingBoxes
+                                        int x1 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 1));
+                                        int y1 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 0));
+                                        int x2 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 3));
+                                        int y2 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 2));
+                                        graphics2D.setPaint(Color.RED);
+                                        graphics2D.setStroke(new BasicStroke(5));
+                                        graphics2D.drawRect(x1, y1, x2 - x1, y2 - y1);
+                                        graphics2D.setPaint(Color.BLACK);
+                                        //add a label with percentage score
+                                        graphics2D.drawString(cocoTreeMap.get(classVal - 1) + " " +
+                                                (new DecimalFormat("#.##").format(detectionScore * 100)) +
+                                                "%", x1, y1);
+                                    }
+                                }
+                                //TODO tf.image.encodeJpeg
+                                ImageIO.write(bufferedImage, "jpg", new File(outputImagePath));
+                            } catch (IOException e) {
+                                System.err.println("Exception with writing image " + e.getMessage());
+                            }
                         }
                     }
-                    //TODO tf.image.encodeJpeg
-                    ImageIO.write(bufferedImage, "jpg", new File(outputImagePath));
-                } catch (IOException e) {
-                    System.err.println("Exception with writing image " + e.getMessage());
                 }
             }
-            //close all tensors in outputTensorMap
-            for (String key : outputTensorMap.keySet()){
-                Tensor tensor = outputTensorMap.get(key);
-                tensor.close();
-            }
-
-            reshapeTensor.close();
-            outputImage.close();
         }
     }
 }
