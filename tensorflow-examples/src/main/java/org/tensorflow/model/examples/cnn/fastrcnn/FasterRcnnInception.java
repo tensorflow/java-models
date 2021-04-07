@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ *  Copyright 2021 The TensorFlow Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *  =======================================================================
  */
 
-package org.tensorflow.model.examples.objectdetection;
+package org.tensorflow.model.examples.cnn.fastrcnn;
 /*
 
 From the web page this is the output dictionary
@@ -229,6 +229,13 @@ public class FasterRcnnInception {
 
     public static void main(String[] params) {
 
+        if (params.length != 2 ){
+            throw new IllegalArgumentException("Exactly 2 parameters required !");
+        }
+
+        //my test image
+        String outputImagePath  = params[1];
+        String imagePath = params[0];
 
         // get path to model folder
         String modelPath = "models/faster_rcnn_inception_resnet_v2_1024x1024";
@@ -246,8 +253,8 @@ public class FasterRcnnInception {
 
             Ops tf = Ops.create(g);
 
-            //my test image
-            String imagePath = "testimages/image2.jpg";
+
+
 
             Constant<TString> fileName = tf.constant(imagePath);
 
@@ -272,55 +279,62 @@ public class FasterRcnnInception {
                             outputImage.shape().asArray()[2]
                     )
             );
-            TUint8 reshapeTensor = (TUint8) runner.fetch(reshape).run().get(1);
+
+            //fresh runner for reshape
+            runner = s.runner();
+            s.run(tf.init());
+            TUint8 reshapeTensor = (TUint8) runner.fetch(reshape).run().get(0);
             Map<String, Tensor> feedDict = new HashMap<>();
             //The given SavedModel SignatureDef input
-            feedDict.put("input_tensor", reshapeTensor);//reshapeTensor(outputImage));
+            feedDict.put("input_tensor", reshapeTensor);
             //The given SavedModel MetaGraphDef key
             Map<String, Tensor> outputTensorMap = model.function("serving_default").call(feedDict);
-
             //detection_classes is a model output name
-            try (TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
-                 TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
-                 TFloat32 numDetections = (TFloat32) outputTensorMap.get("num_detections");
-                 TFloat32 detectionScores = (TFloat32) outputTensorMap.get("detection_scores")) {
+            TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
+            TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
+            TFloat32 numDetections = (TFloat32) outputTensorMap.get("num_detections");
+            TFloat32 detectionScores = (TFloat32) outputTensorMap.get("detection_scores");
 
-                int numDetects = (int) numDetections.getFloat(0);
-                if (numDetects > 0) {
-                    try {
-                        BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
-                        Graphics2D graphics2D = bufferedImage.createGraphics();
+            int numDetects = (int) numDetections.getFloat(0);
+            if (numDetects > 0) {
+                try {
+                    BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
+                    Graphics2D graphics2D = bufferedImage.createGraphics();
 
-                        //TODO tf.image.combinedNonMaxSuppression
-                        for (int n = 0; n < numDetects; n++) {
-                            //put probability and position in outputMap
-                            float detectionScore = detectionScores.getFloat(0, n);
-                            //only include those classes with detection score greater than 0.3f
-                            if (detectionScore > 0.3f) {
-                                Float classVal = detectionClasses.getFloat(0, n);
-                                //TODO tf.image.drawBoundingBoxes
-                                int x1 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 1));
-                                int y1 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 0));
-                                int x2 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 3));
-                                int y2 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 2));
-                                graphics2D.setPaint(Color.RED);
-                                graphics2D.setStroke(new BasicStroke(5));
-                                graphics2D.drawRect(x1, y1, x2 - x1, y2 - y1);
-                                graphics2D.setPaint(Color.BLACK);
-                                //add a label with percentage score 
-                                graphics2D.drawString(cocoTreeMap.get(classVal - 1) + " " +
-                                        (new DecimalFormat("#.##").format(detectionScore * 100)) +
-                                        "%", x1, y1);
-                            }
+                    //TODO tf.image.combinedNonMaxSuppression
+                    for (int n = 0; n < numDetects; n++) {
+                        //put probability and position in outputMap
+                        float detectionScore = detectionScores.getFloat(0, n);
+                        //only include those classes with detection score greater than 0.3f
+                        if (detectionScore > 0.3f) {
+                            float classVal = detectionClasses.getFloat(0, n);
+                            //TODO tf.image.drawBoundingBoxes
+                            int x1 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 1));
+                            int y1 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 0));
+                            int x2 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 3));
+                            int y2 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 2));
+                            graphics2D.setPaint(Color.RED);
+                            graphics2D.setStroke(new BasicStroke(5));
+                            graphics2D.drawRect(x1, y1, x2 - x1, y2 - y1);
+                            graphics2D.setPaint(Color.BLACK);
+                            //add a label with percentage score
+                            graphics2D.drawString(cocoTreeMap.get(classVal - 1) + " " +
+                                    (new DecimalFormat("#.##").format(detectionScore * 100)) +
+                                    "%", x1, y1);
                         }
-                        //TODO tf.image.encodeJpeg
-                        ImageIO.write(bufferedImage, "jpg", new File("image2rcnn.jpg"));
-                    } catch (IOException e) {
-                        System.err.println("Exception with writing image " + e.getMessage());
                     }
+                    //TODO tf.image.encodeJpeg
+                    ImageIO.write(bufferedImage, "jpg", new File(outputImagePath));
+                } catch (IOException e) {
+                    System.err.println("Exception with writing image " + e.getMessage());
                 }
-
             }
+            //close all tensors in outputTensorMap
+            for (String key : outputTensorMap.keySet()){
+                Tensor tensor = outputTensorMap.get(key);
+                tensor.close();
+            }
+
             reshapeTensor.close();
             outputImage.close();
         }
