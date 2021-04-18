@@ -101,26 +101,25 @@ but again the actual tensor is DT_FLOAT according to saved_model_cli.
 */
 
 
-import org.tensorflow.Graph;
-import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Session;
-import org.tensorflow.Tensor;
+import org.tensorflow.*;
+import org.tensorflow.ndarray.FloatNdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.Reshape;
+import org.tensorflow.op.dtypes.Cast;
 import org.tensorflow.op.image.DecodeJpeg;
+import org.tensorflow.op.image.DrawBoundingBoxes;
+import org.tensorflow.op.image.EncodeJpeg;
 import org.tensorflow.op.io.ReadFile;
+import org.tensorflow.op.io.WriteFile;
+import org.tensorflow.op.math.Div;
+import org.tensorflow.op.math.Mul;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TString;
 import org.tensorflow.types.TUint8;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -129,6 +128,7 @@ import java.util.TreeMap;
 /**
  * Loads an image using ReadFile and DecodeJpeg and then uses the saved model
  * faster_rcnn/inception_resnet_v2_1024x1024/1 to detect objects with a detection score greater than 0.3
+ * Uses the DrawBounding boxes
  */
 
 public class FasterRcnnInception {
@@ -287,35 +287,80 @@ public class FasterRcnnInception {
                          TFloat32 detectionMulticlassScores = (TFloat32) outputTensorMap.get("detection_multiclass_scores")) {
                         int numDetects = (int) numDetections.getFloat(0);
                         if (numDetects > 0) {
-                            try {
-                                BufferedImage bufferedImage = ImageIO.read(new File(imagePath));
-                                Graphics2D graphics2D = bufferedImage.createGraphics();
-                                //TODO tf.image.combinedNonMaxSuppression
-                                for (int n = 0; n < numDetects; n++) {
-                                    //put probability and position in outputMap
-                                    float detectionScore = detectionScores.getFloat(0, n);
-                                    //only include those classes with detection score greater than 0.3f
-                                    if (detectionScore > 0.3f) {
-                                        float classVal = detectionClasses.getFloat(0, n);
-                                        //TODO tf.image.drawBoundingBoxes
-                                        int x1 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 1));
-                                        int y1 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 0));
-                                        int x2 = (int) (shapeArray[1] * detectionBoxes.getFloat(0, n, 3));
-                                        int y2 = (int) (shapeArray[0] * detectionBoxes.getFloat(0, n, 2));
-                                        graphics2D.setPaint(Color.RED);
-                                        graphics2D.setStroke(new BasicStroke(5));
-                                        graphics2D.drawRect(x1, y1, x2 - x1, y2 - y1);
-                                        graphics2D.setPaint(Color.BLACK);
-                                        //add a label with percentage score
-                                        graphics2D.drawString(cocoTreeMap.get(classVal - 1) + " " +
-                                                (new DecimalFormat("#.##").format(detectionScore * 100)) +
-                                                "%", x1, y1);
+                            ArrayList<FloatNdArray> boxArray = new ArrayList<>();
+                            //TODO tf.image.combinedNonMaxSuppression
+                            for (int n = 0; n < numDetects; n++) {
+                                //put probability and position in outputMap
+                                float detectionScore = detectionScores.getFloat(0, n);
+                                //only include those classes with detection score greater than 0.3f
+                                if (detectionScore > 0.3f) {
+                                    float classVal = detectionClasses.getFloat(0, n);
+                                    boxArray.add(detectionBoxes.get(0, n));
+                                }
+                            }
+                            //2-D. A list of RGBA colors to cycle through for the boxes.
+                            Operand<TFloat32> colors = tf.constant(new float[][]{{0.9f, 0.3f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.9f, 0.0f}});
+                            //convert the 4D input image to normalised 0.0f - 1.0f
+                            Div<TFloat32> div = tf.math.div(
+                                    tf.dtypes.cast(tf.constant(reshapeTensor), TFloat32.class),
+                                    tf.constant(255.0f)
+                            );
+                            runner = s.runner();
+                            s.run(tf.init());
+                            try (TFloat32 divTensor = (TFloat32) runner.fetch(div).run().get(0)) {
+                                Shape boxesShape = Shape.of(1, boxArray.size(), 4);
+                                int boxCount = 0;
+                                //3-D with shape `[batch, num_bounding_boxes, 4]` containing bounding boxes
+                                try (TFloat32 boxes = TFloat32.tensorOf(boxesShape)) {
+                                    boxes.setFloat(1, 0, 0, 0);
+                                    for (FloatNdArray floatNdArray : boxArray) {
+                                        boxes.set(floatNdArray, 0, boxCount);
+                                        boxCount++;
+                                    }
+                                    //Draw bounding boxes using boxes tensor and list of colors
+                                    DrawBoundingBoxes drawBoundingBoxes = tf.image.drawBoundingBoxes(tf.constant(divTensor),
+                                            tf.constant(boxes), colors);
+                                    runner = s.runner();
+                                    s.run(tf.init());
+                                    try (TFloat32 outputBoxedImage = (TFloat32) runner.fetch(drawBoundingBoxes).run().get(0)) {
+                                        //convert the 4D input image to 0.0f - 255.0f
+                                        Mul<TFloat32> mul = tf.math.mul(
+                                                tf.constant(outputBoxedImage),
+                                                tf.constant(255.0f)
+                                        );
+                                        runner = s.runner();
+                                        s.run(tf.init());
+                                        try (TFloat32 mulTensor = (TFloat32) runner.fetch(mul).run().get(0)) {
+                                            //recast and reshape to TUint8 3D tensor
+                                            Cast<TUint8> cast = tf.dtypes.cast(tf.reshape(tf.constant(mulTensor),
+                                                    tf.array(
+                                                            mulTensor.shape().asArray()[1],
+                                                            mulTensor.shape().asArray()[2],
+                                                            mulTensor.shape().asArray()[3]
+                                                    )
+                                            ), TUint8.class);
+                                            runner = s.runner();
+                                            s.run(tf.init());
+                                            try (TUint8 castTensor = (TUint8) runner.fetch(cast).run().get(0)) {
+                                                //Create JPEG from the Tensor with quality of 100%
+                                                EncodeJpeg.Options jpgOptions = EncodeJpeg.quality(100L);
+                                                EncodeJpeg encodeJpeg = tf.image.encodeJpeg(tf.constant(castTensor),
+                                                        jpgOptions);
+                                                runner = s.runner();
+                                                s.run(tf.init());
+                                                try (TString outputImageTensor = (TString) runner.fetch(
+                                                        encodeJpeg.contents()).run().get(0)) {
+                                                    //output the JPEG to file
+                                                    WriteFile writeFile = tf.io.writeFile(tf.constant(outputImagePath),
+                                                            tf.constant(outputImageTensor));
+                                                    runner = s.runner();
+                                                    s.run(tf.init());
+                                                    runner.addTarget(writeFile).run();
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                                //TODO tf.image.encodeJpeg
-                                ImageIO.write(bufferedImage, "jpg", new File(outputImagePath));
-                            } catch (IOException e) {
-                                System.err.println("Exception with writing image " + e.getMessage());
                             }
                         }
                     }
