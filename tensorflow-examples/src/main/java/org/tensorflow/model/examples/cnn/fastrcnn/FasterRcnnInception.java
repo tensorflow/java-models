@@ -101,7 +101,11 @@ but again the actual tensor is DT_FLOAT according to saved_model_cli.
 */
 
 
-import org.tensorflow.*;
+import org.tensorflow.Graph;
+import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Session;
+import org.tensorflow.Tensor;
+import org.tensorflow.Operand;
 import org.tensorflow.ndarray.FloatNdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
@@ -118,6 +122,7 @@ import org.tensorflow.op.math.Mul;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TString;
 import org.tensorflow.types.TUint8;
+
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -269,7 +274,6 @@ public class FasterRcnnInception {
                 );
                 //fresh runner for reshape
                 runner = s.runner();
-                s.run(tf.init());
                 try (TUint8 reshapeTensor = (TUint8) runner.fetch(reshape).run().get(0)) {
                     Map<String, Tensor> feedDict = new HashMap<>();
                     //The given SavedModel SignatureDef input
@@ -294,19 +298,21 @@ public class FasterRcnnInception {
                                 float detectionScore = detectionScores.getFloat(0, n);
                                 //only include those classes with detection score greater than 0.3f
                                 if (detectionScore > 0.3f) {
-                                    float classVal = detectionClasses.getFloat(0, n);
                                     boxArray.add(detectionBoxes.get(0, n));
                                 }
                             }
                             //2-D. A list of RGBA colors to cycle through for the boxes.
-                            Operand<TFloat32> colors = tf.constant(new float[][]{{0.9f, 0.3f, 0.3f, 0.0f}, {0.3f, 0.3f, 0.9f, 0.0f}});
+                            Operand<TFloat32> colors = tf.constant(new float[][]{
+                                    {0.9f, 0.3f, 0.3f, 0.0f},
+                                    {0.3f, 0.3f, 0.9f, 0.0f},
+                                    {0.3f, 0.9f, 0.3f, 0.0f}
+                            });
                             //convert the 4D input image to normalised 0.0f - 1.0f
                             Div<TFloat32> div = tf.math.div(
                                     tf.dtypes.cast(tf.constant(reshapeTensor), TFloat32.class),
                                     tf.constant(255.0f)
                             );
                             runner = s.runner();
-                            s.run(tf.init());
                             try (TFloat32 divTensor = (TFloat32) runner.fetch(div).run().get(0)) {
                                 Shape boxesShape = Shape.of(1, boxArray.size(), 4);
                                 int boxCount = 0;
@@ -321,7 +327,6 @@ public class FasterRcnnInception {
                                     DrawBoundingBoxes drawBoundingBoxes = tf.image.drawBoundingBoxes(tf.constant(divTensor),
                                             tf.constant(boxes), colors);
                                     runner = s.runner();
-                                    s.run(tf.init());
                                     try (TFloat32 outputBoxedImage = (TFloat32) runner.fetch(drawBoundingBoxes).run().get(0)) {
                                         //convert the 4D input image to 0.0f - 255.0f
                                         Mul<TFloat32> mul = tf.math.mul(
@@ -329,7 +334,6 @@ public class FasterRcnnInception {
                                                 tf.constant(255.0f)
                                         );
                                         runner = s.runner();
-                                        s.run(tf.init());
                                         try (TFloat32 mulTensor = (TFloat32) runner.fetch(mul).run().get(0)) {
                                             //recast and reshape to TUint8 3D tensor
                                             Cast<TUint8> cast = tf.dtypes.cast(tf.reshape(tf.constant(mulTensor),
@@ -340,21 +344,18 @@ public class FasterRcnnInception {
                                                     )
                                             ), TUint8.class);
                                             runner = s.runner();
-                                            s.run(tf.init());
                                             try (TUint8 castTensor = (TUint8) runner.fetch(cast).run().get(0)) {
                                                 //Create JPEG from the Tensor with quality of 100%
                                                 EncodeJpeg.Options jpgOptions = EncodeJpeg.quality(100L);
                                                 EncodeJpeg encodeJpeg = tf.image.encodeJpeg(tf.constant(castTensor),
                                                         jpgOptions);
                                                 runner = s.runner();
-                                                s.run(tf.init());
                                                 try (TString outputImageTensor = (TString) runner.fetch(
                                                         encodeJpeg.contents()).run().get(0)) {
                                                     //output the JPEG to file
                                                     WriteFile writeFile = tf.io.writeFile(tf.constant(outputImagePath),
                                                             tf.constant(outputImageTensor));
                                                     runner = s.runner();
-                                                    s.run(tf.init());
                                                     runner.addTarget(writeFile).run();
                                                 }
                                             }
