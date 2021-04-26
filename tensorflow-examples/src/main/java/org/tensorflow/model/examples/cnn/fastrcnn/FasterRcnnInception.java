@@ -111,14 +111,10 @@ import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.Reshape;
-import org.tensorflow.op.dtypes.Cast;
 import org.tensorflow.op.image.DecodeJpeg;
-import org.tensorflow.op.image.DrawBoundingBoxes;
 import org.tensorflow.op.image.EncodeJpeg;
 import org.tensorflow.op.io.ReadFile;
 import org.tensorflow.op.io.WriteFile;
-import org.tensorflow.op.math.Div;
-import org.tensorflow.op.math.Mul;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TString;
 import org.tensorflow.types.TUint8;
@@ -261,11 +257,11 @@ public class FasterRcnnInception {
             DecodeJpeg decodeImage = tf.image.decodeJpeg(readFile.contents(), options);
             //fetch image from file
             try (TUint8 outputImage = (TUint8) runner.fetch(decodeImage).run().get(0)) {
-                Shape imageShape = outputImage.shape();
+                Shape imageShape = decodeImage.asOutput().shape();
                 //dimensions of test image
                 long[] shapeArray = imageShape.asArray();
                 //reshape the tensor to 4D for input to model
-                Reshape<TUint8> reshape = tf.reshape(tf.constant(outputImage),
+                Reshape<TUint8> reshape = tf.reshape(decodeImage,
                         tf.array(1,
                                 outputImage.shape().asArray()[0],
                                 outputImage.shape().asArray()[1],
@@ -307,61 +303,43 @@ public class FasterRcnnInception {
                                     {0.3f, 0.3f, 0.9f, 0.0f},
                                     {0.3f, 0.9f, 0.3f, 0.0f}
                             });
-                            //convert the 4D input image to normalised 0.0f - 1.0f
-                            Div<TFloat32> div = tf.math.div(
-                                    tf.dtypes.cast(tf.constant(reshapeTensor), TFloat32.class),
-                                    tf.constant(255.0f)
-                            );
-                            runner = s.runner();
-                            try (TFloat32 divTensor = (TFloat32) runner.fetch(div).run().get(0)) {
-                                Shape boxesShape = Shape.of(1, boxArray.size(), 4);
-                                int boxCount = 0;
-                                //3-D with shape `[batch, num_bounding_boxes, 4]` containing bounding boxes
-                                try (TFloat32 boxes = TFloat32.tensorOf(boxesShape)) {
-                                    boxes.setFloat(1, 0, 0, 0);
-                                    for (FloatNdArray floatNdArray : boxArray) {
-                                        boxes.set(floatNdArray, 0, boxCount);
-                                        boxCount++;
-                                    }
-                                    //Draw bounding boxes using boxes tensor and list of colors
-                                    DrawBoundingBoxes drawBoundingBoxes = tf.image.drawBoundingBoxes(tf.constant(divTensor),
-                                            tf.constant(boxes), colors);
-                                    runner = s.runner();
-                                    try (TFloat32 outputBoxedImage = (TFloat32) runner.fetch(drawBoundingBoxes).run().get(0)) {
-                                        //convert the 4D input image to 0.0f - 255.0f
-                                        Mul<TFloat32> mul = tf.math.mul(
-                                                tf.constant(outputBoxedImage),
-                                                tf.constant(255.0f)
-                                        );
-                                        runner = s.runner();
-                                        try (TFloat32 mulTensor = (TFloat32) runner.fetch(mul).run().get(0)) {
-                                            //recast and reshape to TUint8 3D tensor
-                                            Cast<TUint8> cast = tf.dtypes.cast(tf.reshape(tf.constant(mulTensor),
-                                                    tf.array(
-                                                            mulTensor.shape().asArray()[1],
-                                                            mulTensor.shape().asArray()[2],
-                                                            mulTensor.shape().asArray()[3]
-                                                    )
-                                            ), TUint8.class);
-                                            runner = s.runner();
-                                            try (TUint8 castTensor = (TUint8) runner.fetch(cast).run().get(0)) {
-                                                //Create JPEG from the Tensor with quality of 100%
-                                                EncodeJpeg.Options jpgOptions = EncodeJpeg.quality(100L);
-                                                EncodeJpeg encodeJpeg = tf.image.encodeJpeg(tf.constant(castTensor),
-                                                        jpgOptions);
-                                                runner = s.runner();
-                                                try (TString outputImageTensor = (TString) runner.fetch(
-                                                        encodeJpeg.contents()).run().get(0)) {
-                                                    //output the JPEG to file
-                                                    WriteFile writeFile = tf.io.writeFile(tf.constant(outputImagePath),
-                                                            tf.constant(outputImageTensor));
-                                                    runner = s.runner();
-                                                    runner.addTarget(writeFile).run();
-                                                }
-                                            }
-                                        }
-                                    }
+                            Shape boxesShape = Shape.of(1, boxArray.size(), 4);
+                            int boxCount = 0;
+                            //3-D with shape `[batch, num_bounding_boxes, 4]` containing bounding boxes
+                            try (TFloat32 boxes = TFloat32.tensorOf(boxesShape)) {
+                                //batch size of 1
+                                boxes.setFloat(1, 0, 0, 0);
+                                for (FloatNdArray floatNdArray : boxArray) {
+                                    boxes.set(floatNdArray, 0, boxCount);
+                                    boxCount++;
                                 }
+                                //convert the 4D input image to normalised 0.0f - 1.0f
+                                //Draw bounding boxes using boxes tensor and list of colors
+                                //multiply by 255 then reshape and recast to TUint8 3D tensor
+                                //Create JPEG from the Tensor with quality of 100%
+                                EncodeJpeg.Options jpgOptions = EncodeJpeg.quality(100L);
+                                //output the JPEG to file
+                                WriteFile writeFile = tf.io.writeFile(tf.constant(outputImagePath),
+                                        tf.image.encodeJpeg(
+                                                tf.dtypes.cast(tf.reshape(
+                                                        tf.math.mul(
+                                                                tf.image.drawBoundingBoxes(tf.math.div(
+                                                                        tf.dtypes.cast(tf.constant(reshapeTensor),
+                                                                                TFloat32.class),
+                                                                        tf.constant(255.0f)
+                                                                        ),
+                                                                        tf.constant(boxes), colors),
+                                                                tf.constant(255.0f)
+                                                        ),
+                                                        tf.array(
+                                                                outputImage.shape().asArray()[0],
+                                                                outputImage.shape().asArray()[1],
+                                                                outputImage.shape().asArray()[2]
+                                                        )
+                                                ), TUint8.class),
+                                                jpgOptions));
+                                runner = s.runner();
+                                runner.addTarget(writeFile).run();
                             }
                         }
                     }
