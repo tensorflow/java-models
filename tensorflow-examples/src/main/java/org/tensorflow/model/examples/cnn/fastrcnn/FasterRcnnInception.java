@@ -110,6 +110,7 @@ import org.tensorflow.ndarray.FloatNdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
+import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Reshape;
 import org.tensorflow.op.image.DecodeJpeg;
 import org.tensorflow.op.image.EncodeJpeg;
@@ -233,8 +234,9 @@ public class FasterRcnnInception {
         if (params.length != 2) {
             throw new IllegalArgumentException("Exactly 2 parameters required !");
         }
-        //my test image
+        //my output image
         String outputImagePath = params[1];
+        //my test image
         String imagePath = params[0];
         // get path to model folder
         String modelPath = "models/faster_rcnn_inception_resnet_v2_1024x1024";
@@ -313,13 +315,15 @@ public class FasterRcnnInception {
                                     boxes.set(floatNdArray, 0, boxCount);
                                     boxCount++;
                                 }
+                                //Placeholders for boxes and path to outputimage
+                                Placeholder<TFloat32> boxesPlaceHolder = tf.placeholder(TFloat32.class, Placeholder.shape(boxesShape));
+                                Placeholder<TString> outImagePathPlaceholder = tf.placeholder(TString.class);
+                                //Create JPEG from the Tensor with quality of 100%
+                                EncodeJpeg.Options jpgOptions = EncodeJpeg.quality(100L);
                                 //convert the 4D input image to normalised 0.0f - 1.0f
                                 //Draw bounding boxes using boxes tensor and list of colors
                                 //multiply by 255 then reshape and recast to TUint8 3D tensor
-                                //Create JPEG from the Tensor with quality of 100%
-                                EncodeJpeg.Options jpgOptions = EncodeJpeg.quality(100L);
-                                //output the JPEG to file
-                                WriteFile writeFile = tf.io.writeFile(tf.constant(outputImagePath),
+                                WriteFile writeFile = tf.io.writeFile(outImagePathPlaceholder,
                                         tf.image.encodeJpeg(
                                                 tf.dtypes.cast(tf.reshape(
                                                         tf.math.mul(
@@ -328,7 +332,7 @@ public class FasterRcnnInception {
                                                                                 TFloat32.class),
                                                                         tf.constant(255.0f)
                                                                         ),
-                                                                        tf.constant(boxes), colors),
+                                                                        boxesPlaceHolder, colors),
                                                                 tf.constant(255.0f)
                                                         ),
                                                         tf.array(
@@ -338,8 +342,10 @@ public class FasterRcnnInception {
                                                         )
                                                 ), TUint8.class),
                                                 jpgOptions));
-                                runner = s.runner();
-                                runner.addTarget(writeFile).run();
+                                //output the JPEG to file
+                                s.runner().feed(outImagePathPlaceholder, TString.scalarOf(outputImagePath))
+                                        .feed(boxesPlaceHolder, boxes)
+                                        .addTarget(writeFile).run();
                             }
                         }
                     }
