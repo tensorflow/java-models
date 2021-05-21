@@ -270,9 +270,7 @@ public class FasterRcnnInception {
                                 outputImage.shape().asArray()[2]
                         )
                 );
-                //fresh runner for reshape
-                runner = s.runner();
-                try (TUint8 reshapeTensor = (TUint8) runner.fetch(reshape).run().get(0)) {
+                try (TUint8 reshapeTensor = (TUint8)s.runner().fetch(reshape).run().get(0)) {
                     Map<String, Tensor> feedDict = new HashMap<>();
                     //The given SavedModel SignatureDef input
                     feedDict.put("input_tensor", reshapeTensor);
