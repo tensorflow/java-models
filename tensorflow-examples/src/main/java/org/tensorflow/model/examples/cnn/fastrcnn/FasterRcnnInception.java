@@ -259,9 +259,7 @@ public class FasterRcnnInception {
             DecodeJpeg decodeImage = tf.image.decodeJpeg(readFile.contents(), options);
             //fetch image from file
             try (TUint8 outputImage = (TUint8) runner.fetch(decodeImage).run().get(0)) {
-                Shape imageShape = decodeImage.asOutput().shape();
-                //dimensions of test image
-                long[] shapeArray = imageShape.asArray();
+                Shape imageShape = outputImage.shape();
                 //reshape the tensor to 4D for input to model
                 Reshape<TUint8> reshape = tf.reshape(decodeImage,
                         tf.array(1,
@@ -334,9 +332,9 @@ public class FasterRcnnInception {
                                                                 tf.constant(255.0f)
                                                         ),
                                                         tf.array(
-                                                                outputImage.shape().asArray()[0],
-                                                                outputImage.shape().asArray()[1],
-                                                                outputImage.shape().asArray()[2]
+                                                                imageShape.asArray()[0],
+                                                                imageShape.asArray()[1],
+                                                                imageShape.asArray()[2]
                                                         )
                                                 ), TUint8.class),
                                                 jpgOptions));
