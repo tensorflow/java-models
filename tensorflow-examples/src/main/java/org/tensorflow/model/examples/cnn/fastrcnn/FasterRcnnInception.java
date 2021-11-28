@@ -101,11 +101,15 @@ but again the actual tensor is DT_FLOAT according to saved_model_cli.
 */
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import org.tensorflow.Graph;
+import org.tensorflow.Operand;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
-import org.tensorflow.Operand;
 import org.tensorflow.ndarray.FloatNdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
@@ -119,12 +123,6 @@ import org.tensorflow.op.io.WriteFile;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TString;
 import org.tensorflow.types.TUint8;
-
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
 
 
 /**
@@ -254,7 +252,6 @@ public class FasterRcnnInception {
             Constant<TString> fileName = tf.constant(imagePath);
             ReadFile readFile = tf.io.readFile(fileName);
             Session.Runner runner = s.runner();
-            s.run(tf.init());
             DecodeJpeg.Options options = DecodeJpeg.channels(3L);
             DecodeJpeg decodeImage = tf.image.decodeJpeg(readFile.contents(), options);
             //fetch image from file

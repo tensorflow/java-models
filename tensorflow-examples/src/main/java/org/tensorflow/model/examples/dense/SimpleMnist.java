@@ -19,19 +19,18 @@ package org.tensorflow.model.examples.dense;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
-import org.tensorflow.Tensor;
 import org.tensorflow.framework.optimizers.GradientDescent;
 import org.tensorflow.framework.optimizers.Optimizer;
 import org.tensorflow.model.examples.datasets.ImageBatch;
 import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Placeholder;
 import org.tensorflow.op.core.Variable;
 import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Softmax;
-import org.tensorflow.ndarray.Shape;
-import org.tensorflow.ndarray.ByteNdArray;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 
@@ -61,16 +60,11 @@ public class SimpleMnist implements Runnable {
 
     // Create weights with an initial value of 0
     Shape weightShape = Shape.of(dataset.imageSize(), MnistDataset.NUM_CLASSES);
-    Variable<TFloat32> weights = tf.variable(weightShape, TFloat32.class);
-    tf.initAdd(tf.assign(weights, tf.zerosLike(weights)));
+    Variable<TFloat32> weights = tf.variable(tf.zeros(tf.constant(weightShape), TFloat32.class));
 
     // Create biases with an initial value of 0
     Shape biasShape = Shape.of(MnistDataset.NUM_CLASSES);
-    Variable<TFloat32> biases = tf.variable(biasShape, TFloat32.class);
-    tf.initAdd(tf.assign(biases, tf.zerosLike(biases)));
-
-    // Register all variable initializers for single execution
-    tf.init();
+    Variable<TFloat32> biases = tf.variable(tf.zeros(tf.constant(biasShape), TFloat32.class));
 
     // Predict the class of each image in the batch and compute the loss
     Softmax<TFloat32> softmax =
@@ -102,9 +96,6 @@ public class SimpleMnist implements Runnable {
 
     // Run the graph
     try (Session session = new Session(graph)) {
-
-      // Initialize variables
-      session.run(tf.init());
 
       // Train the model
       for (ImageBatch trainingBatch : dataset.trainingBatches(TRAINING_BATCH_SIZE)) {
@@ -163,8 +154,8 @@ public class SimpleMnist implements Runnable {
     ).asTensor();
   }
 
-  private Graph graph;
-  private MnistDataset dataset;
+  private final Graph graph;
+  private final MnistDataset dataset;
   
   private SimpleMnist(Graph graph, MnistDataset dataset) {
     this.graph = graph;

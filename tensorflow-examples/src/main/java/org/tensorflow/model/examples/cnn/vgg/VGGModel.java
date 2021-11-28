@@ -16,14 +16,20 @@
  */
 package org.tensorflow.model.examples.cnn.vgg;
 
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
-import org.tensorflow.Tensor;
 import org.tensorflow.framework.optimizers.Adam;
 import org.tensorflow.framework.optimizers.Optimizer;
 import org.tensorflow.model.examples.datasets.ImageBatch;
 import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.FloatNdArray;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.index.Indices;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
 import org.tensorflow.op.core.OneHot;
@@ -35,18 +41,10 @@ import org.tensorflow.op.math.Mean;
 import org.tensorflow.op.nn.Conv2d;
 import org.tensorflow.op.nn.MaxPool;
 import org.tensorflow.op.nn.Relu;
-import org.tensorflow.op.nn.raw.SoftmaxCrossEntropyWithLogits;
+import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
-import org.tensorflow.ndarray.Shape;
-import org.tensorflow.ndarray.ByteNdArray;
-import org.tensorflow.ndarray.FloatNdArray;
-import org.tensorflow.ndarray.index.Indices;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TUint8;
-
-import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Describes the VGGModel.
@@ -64,7 +62,6 @@ public class VGGModel implements AutoCloseable {
     public static final String TARGET = "target";
     public static final String TRAIN = "train";
     public static final String TRAINING_LOSS = "training_loss";
-    public static final String INIT = "init";
 
     private static final Logger logger = Logger.getLogger(VGGModel.class.getName());
 
@@ -127,8 +124,6 @@ public class VGGModel implements AutoCloseable {
 
         optimizer.minimize(loss, TRAIN);
 
-        tf.init();
-
         return graph;
     }
 
@@ -159,8 +154,7 @@ public class VGGModel implements AutoCloseable {
         // Loss function & regularization
         OneHot<TFloat32> oneHot = tf
                 .oneHot(labels, tf.constant(10), tf.constant(1.0f), tf.constant(0.0f));
-        SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.raw
-                .softmaxCrossEntropyWithLogits(logits, oneHot);
+        SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.softmaxCrossEntropyWithLogits(logits, oneHot);
         Mean<TFloat32> labelLoss = tf.math.mean(batchLoss.loss(), tf.constant(0));
         Add<TFloat32> regularizers = tf.math.add(tf.nn.l2Loss(fc1Weights), tf.math
                 .add(tf.nn.l2Loss(fc1Biases),
@@ -193,10 +187,6 @@ public class VGGModel implements AutoCloseable {
     }
 
     public void train(MnistDataset dataset, int epochs, int minibatchSize) {
-        // Initialises the parameters.
-        session.runner().addTarget(INIT).run();
-        logger.info("Initialised the model parameters");
-
         int interval = 0;
         // Train the model
         for (int i = 0; i < epochs; i++) {
@@ -261,7 +251,7 @@ public class VGGModel implements AutoCloseable {
             sb.append("\n");
         }
 
-        System.out.println(sb.toString());
+        System.out.println(sb);
     }
 
     /**

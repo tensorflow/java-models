@@ -16,9 +16,8 @@
  */
 package org.tensorflow.model.examples.cnn.vgg;
 
-import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
-
 import java.util.logging.Logger;
+import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
 
 /**
  * Trains and evaluates VGG'11 model on FashionMNIST dataset.

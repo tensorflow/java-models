@@ -22,9 +22,20 @@ import java.util.logging.Logger;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
-import org.tensorflow.Tensor;
+import org.tensorflow.framework.optimizers.AdaDelta;
+import org.tensorflow.framework.optimizers.AdaGrad;
+import org.tensorflow.framework.optimizers.AdaGradDA;
+import org.tensorflow.framework.optimizers.Adam;
+import org.tensorflow.framework.optimizers.GradientDescent;
+import org.tensorflow.framework.optimizers.Momentum;
+import org.tensorflow.framework.optimizers.Optimizer;
+import org.tensorflow.framework.optimizers.RMSProp;
 import org.tensorflow.model.examples.datasets.ImageBatch;
 import org.tensorflow.model.examples.datasets.mnist.MnistDataset;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.FloatNdArray;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.index.Indices;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Constant;
@@ -38,20 +49,8 @@ import org.tensorflow.op.nn.Conv2d;
 import org.tensorflow.op.nn.MaxPool;
 import org.tensorflow.op.nn.Relu;
 import org.tensorflow.op.nn.Softmax;
-import org.tensorflow.op.nn.raw.SoftmaxCrossEntropyWithLogits;
+import org.tensorflow.op.nn.SoftmaxCrossEntropyWithLogits;
 import org.tensorflow.op.random.TruncatedNormal;
-import org.tensorflow.ndarray.Shape;
-import org.tensorflow.ndarray.ByteNdArray;
-import org.tensorflow.ndarray.FloatNdArray;
-import org.tensorflow.ndarray.index.Indices;
-import org.tensorflow.framework.optimizers.AdaDelta;
-import org.tensorflow.framework.optimizers.AdaGrad;
-import org.tensorflow.framework.optimizers.AdaGradDA;
-import org.tensorflow.framework.optimizers.Adam;
-import org.tensorflow.framework.optimizers.GradientDescent;
-import org.tensorflow.framework.optimizers.Momentum;
-import org.tensorflow.framework.optimizers.Optimizer;
-import org.tensorflow.framework.optimizers.RMSProp;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TUint8;
 
@@ -75,7 +74,6 @@ public class CnnMnist {
   public static final String TARGET = "target";
   public static final String TRAIN = "train";
   public static final String TRAINING_LOSS = "training_loss";
-  public static final String INIT = "init";
 
   private static final String TRAINING_IMAGES_ARCHIVE = "mnist/train-images-idx3-ubyte.gz";
   private static final String TRAINING_LABELS_ARCHIVE = "mnist/train-labels-idx1-ubyte.gz";
@@ -160,8 +158,7 @@ public class CnnMnist {
     // Loss function & regularization
     OneHot<TFloat32> oneHot = tf
         .oneHot(labels, tf.constant(10), tf.constant(1.0f), tf.constant(0.0f));
-    SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.raw
-            .softmaxCrossEntropyWithLogits(logits, oneHot);
+    SoftmaxCrossEntropyWithLogits<TFloat32> batchLoss = tf.nn.softmaxCrossEntropyWithLogits(logits, oneHot);
     Mean<TFloat32> labelLoss = tf.math.mean(batchLoss.loss(), tf.constant(0));
     Add<TFloat32> regularizers = tf.math.add(tf.nn.l2Loss(fc1Weights), tf.math
         .add(tf.nn.l2Loss(fc1Biases),
@@ -197,19 +194,13 @@ public class CnnMnist {
       default:
         throw new IllegalArgumentException("Unknown optimizer " + optimizerName);
     }
-    logger.info("Optimizer = " + optimizer.toString());
+    logger.info("Optimizer = " + optimizer);
     Op minimize = optimizer.minimize(loss, TRAIN);
-
-    tf.init();
 
     return graph;
   }
 
   public static void train(Session session, int epochs, int minibatchSize, MnistDataset dataset) {
-    // Initialises the parameters.
-    session.runner().addTarget(INIT).run();
-    logger.info("Initialised the model parameters");
-
     int interval = 0;
     // Train the model
     for (int i = 0; i < epochs; i++) {
@@ -274,7 +265,7 @@ public class CnnMnist {
       sb.append("\n");
     }
 
-    System.out.println(sb.toString());
+    System.out.println(sb);
   }
 
   /**

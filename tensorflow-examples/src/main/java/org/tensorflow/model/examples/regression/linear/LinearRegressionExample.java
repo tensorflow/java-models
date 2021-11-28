@@ -16,11 +16,13 @@
  */
 package org.tensorflow.model.examples.regression.linear;
 
+import java.util.List;
+import java.util.Random;
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
-import org.tensorflow.Tensor;
 import org.tensorflow.framework.optimizers.GradientDescent;
 import org.tensorflow.framework.optimizers.Optimizer;
+import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Op;
 import org.tensorflow.op.Ops;
 import org.tensorflow.op.core.Placeholder;
@@ -29,11 +31,7 @@ import org.tensorflow.op.math.Add;
 import org.tensorflow.op.math.Div;
 import org.tensorflow.op.math.Mul;
 import org.tensorflow.op.math.Pow;
-import org.tensorflow.ndarray.Shape;
 import org.tensorflow.types.TFloat32;
-
-import java.util.List;
-import java.util.Random;
 
 /**
  * In this example TensorFlow finds the weight and bias of the linear regression during 1 epoch,
@@ -89,8 +87,6 @@ public class LinearRegressionExample {
             Op minimize = optimizer.minimize(mse);
 
             try (Session session = new Session(graph)) {
-                // Initialize graph variables
-                session.run(tf.init());
 
                 // Train the model on data
                 for (int i = 0; i < xValues.length; i++) {
