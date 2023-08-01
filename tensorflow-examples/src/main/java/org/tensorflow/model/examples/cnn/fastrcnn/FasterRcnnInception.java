@@ -105,11 +105,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import org.tensorflow.Graph;
-import org.tensorflow.Operand;
-import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Session;
-import org.tensorflow.Tensor;
+
+import org.tensorflow.*;
 import org.tensorflow.ndarray.FloatNdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
@@ -227,8 +224,7 @@ public class FasterRcnnInception {
             "hair brush"
     };
 
-    public static void main(String[] params) {
-
+    private static void rcnnInception(String [] params) {
         if (params.length != 2) {
             throw new IllegalArgumentException("Exactly 2 parameters required !");
         }
@@ -269,7 +265,9 @@ public class FasterRcnnInception {
                 //The given SavedModel SignatureDef input
                 feedDict.put("input_tensor", reshapeTensor);
                 //The given SavedModel MetaGraphDef key
-                Map<String, Tensor> outputTensorMap = model.function("serving_default").call(feedDict);
+                Map<String, Tensor> outputTensorMap = new HashMap<>();
+                //  model.function("serving_default").call(feedDict);
+
                 //detection_classes, detectionBoxes etc. are model output names
                 try (TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
                      TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
@@ -320,9 +318,9 @@ public class FasterRcnnInception {
                                             tf.dtypes.cast(tf.reshape(
                                                     tf.math.mul(
                                                             tf.image.drawBoundingBoxes(tf.math.div(
-                                                                    tf.dtypes.cast(tf.constant(reshapeTensor),
-                                                                            TFloat32.class),
-                                                                    tf.constant(255.0f)
+                                                                            tf.dtypes.cast(tf.constant(reshapeTensor),
+                                                                                    TFloat32.class),
+                                                                            tf.constant(255.0f)
                                                                     ),
                                                                     boxesPlaceHolder, colors),
                                                             tf.constant(255.0f)
@@ -343,5 +341,15 @@ public class FasterRcnnInception {
                 }
             }
         }
+    }
+
+    /**
+     * 1. test image path
+     * 2. output image path
+     * @param params input param
+     */
+    public static void main(String[] params) {
+        String [] input = {"", ""};
+        rcnnInception(input);
     }
 }

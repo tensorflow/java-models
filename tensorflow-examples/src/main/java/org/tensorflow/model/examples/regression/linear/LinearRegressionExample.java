@@ -19,6 +19,7 @@ package org.tensorflow.model.examples.regression.linear;
 import java.util.List;
 import java.util.Random;
 import org.tensorflow.Graph;
+import org.tensorflow.Result;
 import org.tensorflow.Session;
 import org.tensorflow.framework.optimizers.GradientDescent;
 import org.tensorflow.framework.optimizers.Optimizer;
@@ -108,7 +109,7 @@ public class LinearRegressionExample {
                 }
 
                 // Extract linear regression model weight and bias values
-                List<?> tensorList = session.runner()
+                Result tensorList = session.runner()
                         .fetch(WEIGHT_VARIABLE_NAME)
                         .fetch(BIAS_VARIABLE_NAME)
                         .run();
