@@ -16,7 +16,6 @@
  */
 package org.tensorflow.model.examples.regression.linear;
 
-import java.util.List;
 import java.util.Random;
 import org.tensorflow.Graph;
 import org.tensorflow.Result;
@@ -114,8 +113,8 @@ public class LinearRegressionExample {
                         .fetch(BIAS_VARIABLE_NAME)
                         .run();
 
-                try (TFloat32 weightValue = (TFloat32)tensorList.get(0);
-                     TFloat32 biasValue = (TFloat32)tensorList.get(1)) {
+                try (TFloat32 weightValue = (TFloat32) tensorList.get(0);
+                     TFloat32 biasValue = (TFloat32) tensorList.get(1)) {
 
                     System.out.println("Weight is " + weightValue.getFloat());
                     System.out.println("Bias is " + biasValue.getFloat());
@@ -127,7 +126,7 @@ public class LinearRegressionExample {
 
                 try (TFloat32 xTensor = TFloat32.scalarOf(x);
                      TFloat32 yTensor = TFloat32.scalarOf(predictedY);
-                     TFloat32 yPredictedTensor = (TFloat32)session.runner()
+                     TFloat32 yPredictedTensor = (TFloat32) session.runner()
                              .feed(xData.asOutput(), xTensor)
                              .feed(yData.asOutput(), yTensor)
                              .fetch(yPredicted)
