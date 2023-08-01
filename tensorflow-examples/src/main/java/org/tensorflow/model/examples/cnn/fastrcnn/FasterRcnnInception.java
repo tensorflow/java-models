@@ -224,7 +224,7 @@ public class FasterRcnnInception {
             "hair brush"
     };
 
-    private static void rcnnInception(String [] params) {
+    private static void rcnnInception(String[] params) {
         if (params.length != 2) {
             throw new IllegalArgumentException("Exactly 2 parameters required !");
         }
@@ -266,7 +266,7 @@ public class FasterRcnnInception {
                 feedDict.put("input_tensor", reshapeTensor);
                 //The given SavedModel MetaGraphDef key
                 Map<String, Tensor> outputTensorMap = new HashMap<>();
-                //  model.function("serving_default").call(feedDict);
+                model.function("serving_default").call(feedDict);
 
                 //detection_classes, detectionBoxes etc. are model output names
                 try (TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
@@ -346,10 +346,11 @@ public class FasterRcnnInception {
     /**
      * 1. test image path
      * 2. output image path
+     *
      * @param params input param
      */
     public static void main(String[] params) {
-        String [] input = {"", ""};
+        String[] input = {"", ""};
         rcnnInception(input);
     }
 }
