@@ -99,10 +99,10 @@ also the web page states
 detection_classes: a tf.int tensor of shape [N] containing detection class index from the label file.
 but again the actual tensor is DT_FLOAT according to saved_model_cli.
 */
-
-
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.SavedModelBundle;
