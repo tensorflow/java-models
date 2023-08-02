@@ -101,12 +101,13 @@ but again the actual tensor is DT_FLOAT according to saved_model_cli.
 */
 
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
-import org.tensorflow.*;
+import org.tensorflow.Graph;
+import org.tensorflow.Operand;
+import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Session;
+import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.FloatNdArray;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.op.Ops;
@@ -224,7 +225,7 @@ public class FasterRcnnInception {
             "hair brush"
     };
 
-    private static void rcnnInception(String[] params) {
+    private static void main(String[] params) {
         if (params.length != 2) {
             throw new IllegalArgumentException("Exactly 2 parameters required !");
         }
@@ -266,8 +267,7 @@ public class FasterRcnnInception {
                 feedDict.put("input_tensor", reshapeTensor);
                 //The given SavedModel MetaGraphDef key
                 Map<String, Tensor> outputTensorMap = new HashMap<>();
-                model.function("serving_default").call(feedDict);
-
+                outputTensorMap.put("module_output", model.function("serving_default").call(feedDict).get(0));
                 //detection_classes, detectionBoxes etc. are model output names
                 try (TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
                      TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
@@ -341,16 +341,5 @@ public class FasterRcnnInception {
                 }
             }
         }
-    }
-
-    /**
-     * 1. test image path
-     * 2. output image path
-     *
-     * @param params input param
-     */
-    public static void main(String[] params) {
-        String[] input = {"", ""};
-        rcnnInception(input);
     }
 }
