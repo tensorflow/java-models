@@ -4,7 +4,7 @@ This repository contains examples for [TensorFlow-Java](https://github.com/tenso
 
 ## Example Models
 
-There are four example models: a LeNet CNN, a VGG CNN, inference using Faster-RCNN, a linear regression and a logistic regression.  
+There are five example models: a LeNet CNN, a VGG CNN, inference using Faster-RCNN, a linear regression and a logistic regression.  
 
 ### Faster-RCNN
 
