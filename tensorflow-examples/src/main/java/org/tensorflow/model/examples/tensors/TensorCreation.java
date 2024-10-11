@@ -16,7 +16,6 @@
  */
 package org.tensorflow.model.examples.tensors;
 
-import org.tensorflow.Tensor;
 import org.tensorflow.ndarray.Shape;
 import org.tensorflow.ndarray.IntNdArray;
 import org.tensorflow.ndarray.NdArrays;

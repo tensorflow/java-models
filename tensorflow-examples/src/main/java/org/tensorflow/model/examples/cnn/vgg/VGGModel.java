@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ *  Copyright 2020, 2024 The TensorFlow Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -193,12 +193,13 @@ public class VGGModel implements AutoCloseable {
             for (ImageBatch trainingBatch : dataset.trainingBatches(minibatchSize)) {
                 try (TUint8 batchImages = TUint8.tensorOf(trainingBatch.images());
                      TUint8 batchLabels = TUint8.tensorOf(trainingBatch.labels());
-                     TFloat32 loss = (TFloat32)session.runner()
+                     var result = session.runner()
                              .feed(TARGET, batchLabels)
                              .feed(INPUT_NAME, batchImages)
                              .addTarget(TRAIN)
                              .fetch(TRAINING_LOSS)
-                             .run().get(0)) {
+                             .run()) {
+                    TFloat32 loss = (TFloat32) result.get(0);
 
                     logger.log(Level.INFO,
                             "Iteration = " + interval + ", training loss = " + loss.getFloat());
@@ -215,12 +216,13 @@ public class VGGModel implements AutoCloseable {
 
         for (ImageBatch trainingBatch : dataset.testBatches(minibatchSize)) {
             try (TUint8 transformedInput = TUint8.tensorOf(trainingBatch.images());
-                 TFloat32 outputTensor = (TFloat32)session.runner()
+                 var result = session.runner()
                          .feed(INPUT_NAME, transformedInput)
-                         .fetch(OUTPUT_NAME).run().get(0)) {
+                         .fetch(OUTPUT_NAME).run()) {
+                TFloat32 outputTensor = (TFloat32) result.get(0);
 
                 ByteNdArray labelBatch = trainingBatch.labels();
-                for (int k = 0; k < labelBatch.shape().size(0); k++) {
+                for (int k = 0; k < labelBatch.shape().get(0); k++) {
                     byte trueLabel = labelBatch.getByte(k);
                     int predLabel;
 
@@ -263,7 +265,7 @@ public class VGGModel implements AutoCloseable {
     public static int argmax(FloatNdArray probabilities) {
         float maxVal = Float.NEGATIVE_INFINITY;
         int idx = 0;
-        for (int i = 0; i < probabilities.shape().size(0); i++) {
+        for (int i = 0; i < probabilities.shape().get(0); i++) {
             float curVal = probabilities.getFloat(i);
             if (curVal > maxVal) {
                 maxVal = curVal;

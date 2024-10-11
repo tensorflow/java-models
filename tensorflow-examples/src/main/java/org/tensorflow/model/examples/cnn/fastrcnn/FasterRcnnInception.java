@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+ *  Copyright 2021, 2024 The TensorFlow Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
+import org.tensorflow.Result;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
@@ -130,7 +131,6 @@ import org.tensorflow.types.TUint8;
  * faster_rcnn/inception_resnet_v2_1024x1024/1 to detect objects with a detection score greater than 0.3
  * Uses the DrawBounding boxes
  */
-
 public class FasterRcnnInception {
 
     private final static String[] cocoLabels = new String[]{
@@ -230,7 +230,7 @@ public class FasterRcnnInception {
     public static void main(String[] params) {
 
         if (params.length != 2) {
-            throw new IllegalArgumentException("Exactly 2 parameters required !");
+            throw new IllegalArgumentException("Exactly 2 parameters required: java FasterRcnnInception <input-image-path> <output-image-path>");
         }
         //my output image
         String outputImagePath = params[1];
@@ -255,7 +255,10 @@ public class FasterRcnnInception {
             DecodeJpeg.Options options = DecodeJpeg.channels(3L);
             DecodeJpeg decodeImage = tf.image.decodeJpeg(readFile.contents(), options);
             //fetch image from file
-            Shape imageShape = runner.fetch(decodeImage).run().get(0).shape();
+            Shape imageShape;
+            try (var shapeResult = runner.fetch(decodeImage).run()) {
+                imageShape = shapeResult.get(0).shape();
+            }
             //reshape the tensor to 4D for input to model
             Reshape<TUint8> reshape = tf.reshape(decodeImage,
                     tf.array(1,
@@ -264,23 +267,19 @@ public class FasterRcnnInception {
                             imageShape.asArray()[2]
                     )
             );
-            try (TUint8 reshapeTensor = (TUint8) s.runner().fetch(reshape).run().get(0)) {
+            try (var reshapeResult = s.runner().fetch(reshape).run()) {
+                TUint8 reshapeTensor = (TUint8) reshapeResult.get(0);
                 Map<String, Tensor> feedDict = new HashMap<>();
                 //The given SavedModel SignatureDef input
                 feedDict.put("input_tensor", reshapeTensor);
                 //The given SavedModel MetaGraphDef key
-                Map<String, Tensor> outputTensorMap = model.function("serving_default").call(feedDict);
                 //detection_classes, detectionBoxes etc. are model output names
-                try (TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes");
-                     TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes");
-                     TFloat32 rawDetectionBoxes = (TFloat32) outputTensorMap.get("raw_detection_boxes");
-                     TFloat32 numDetections = (TFloat32) outputTensorMap.get("num_detections");
-                     TFloat32 detectionScores = (TFloat32) outputTensorMap.get("detection_scores");
-                     TFloat32 rawDetectionScores = (TFloat32) outputTensorMap.get("raw_detection_scores");
-                     TFloat32 detectionAnchorIndices = (TFloat32) outputTensorMap.get("detection_anchor_indices");
-                     TFloat32 detectionMulticlassScores = (TFloat32) outputTensorMap.get("detection_multiclass_scores")) {
+                try (Result outputTensorMap = model.function("serving_default").call(feedDict)) {
+                    TFloat32 numDetections = (TFloat32) outputTensorMap.get("num_detections").get();
                     int numDetects = (int) numDetections.getFloat(0);
                     if (numDetects > 0) {
+                        TFloat32 detectionBoxes = (TFloat32) outputTensorMap.get("detection_boxes").get();
+                        TFloat32 detectionScores = (TFloat32) outputTensorMap.get("detection_scores").get();
                         ArrayList<FloatNdArray> boxArray = new ArrayList<>();
                         //TODO tf.image.combinedNonMaxSuppression
                         for (int n = 0; n < numDetects; n++) {
@@ -291,6 +290,13 @@ public class FasterRcnnInception {
                                 boxArray.add(detectionBoxes.get(0, n));
                             }
                         }
+                        /* These values are also returned by the FasterRCNN, but we don't use them in this example.
+                         * TFloat32 detectionClasses = (TFloat32) outputTensorMap.get("detection_classes").get();
+                         * TFloat32 rawDetectionBoxes = (TFloat32) outputTensorMap.get("raw_detection_boxes").get();
+                         * TFloat32 rawDetectionScores = (TFloat32) outputTensorMap.get("raw_detection_scores").get();
+                         * TFloat32 detectionAnchorIndices = (TFloat32) outputTensorMap.get("detection_anchor_indices").get();
+                         * TFloat32 detectionMulticlassScores = (TFloat32) outputTensorMap.get("detection_multiclass_scores").get();
+                         */
                         //2-D. A list of RGBA colors to cycle through for the boxes.
                         Operand<TFloat32> colors = tf.constant(new float[][]{
                                 {0.9f, 0.3f, 0.3f, 0.0f},
@@ -320,9 +326,9 @@ public class FasterRcnnInception {
                                             tf.dtypes.cast(tf.reshape(
                                                     tf.math.mul(
                                                             tf.image.drawBoundingBoxes(tf.math.div(
-                                                                    tf.dtypes.cast(tf.constant(reshapeTensor),
-                                                                            TFloat32.class),
-                                                                    tf.constant(255.0f)
+                                                                            tf.dtypes.cast(tf.constant(reshapeTensor),
+                                                                                    TFloat32.class),
+                                                                            tf.constant(255.0f)
                                                                     ),
                                                                     boxesPlaceHolder, colors),
                                                             tf.constant(255.0f)

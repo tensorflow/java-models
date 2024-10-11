@@ -108,16 +108,12 @@ public class LinearRegressionExample {
                 }
 
                 // Extract linear regression model weight and bias values
-                List<?> tensorList = session.runner()
+                try (var result = session.runner()
                         .fetch(WEIGHT_VARIABLE_NAME)
                         .fetch(BIAS_VARIABLE_NAME)
-                        .run();
-
-                try (TFloat32 weightValue = (TFloat32)tensorList.get(0);
-                     TFloat32 biasValue = (TFloat32)tensorList.get(1)) {
-
-                    System.out.println("Weight is " + weightValue.getFloat());
-                    System.out.println("Bias is " + biasValue.getFloat());
+                        .run()) {
+                    System.out.println("Weight is " + result.get(WEIGHT_VARIABLE_NAME));
+                    System.out.println("Bias is " + result.get(BIAS_VARIABLE_NAME));
                 }
 
                 // Let's predict y for x = 10f

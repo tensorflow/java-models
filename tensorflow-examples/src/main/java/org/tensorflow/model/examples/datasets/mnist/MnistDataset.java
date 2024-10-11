@@ -80,15 +80,15 @@ public class MnistDataset {
   }
 
   public long numTrainingExamples() {
-    return trainingLabels.shape().size(0);
+    return trainingLabels.shape().get(0);
   }
 
   public long numTestingExamples() {
-    return testLabels.shape().size(0);
+    return testLabels.shape().get(0);
   }
 
   public long numValidationExamples() {
-    return validationLabels.shape().size(0);
+    return validationLabels.shape().get(0);
   }
 
   private static final int TYPE_UBYTE = 0x08;
@@ -119,24 +119,24 @@ public class MnistDataset {
   }
 
   private static ByteNdArray readArchive(String archiveName) throws IOException {
-    DataInputStream archiveStream = new DataInputStream(
-        //new GZIPInputStream(new java.io.FileInputStream("src/main/resources/"+archiveName))
+    try (DataInputStream archiveStream = new DataInputStream(
         new GZIPInputStream(MnistDataset.class.getClassLoader().getResourceAsStream(archiveName))
-    );
-    archiveStream.readShort(); // first two bytes are always 0
-    byte magic = archiveStream.readByte();
-    if (magic != TYPE_UBYTE) {
-      throw new IllegalArgumentException("\"" + archiveName + "\" is not a valid archive");
+    )) {
+      archiveStream.readShort(); // first two bytes are always 0
+      byte magic = archiveStream.readByte();
+      if (magic != TYPE_UBYTE) {
+        throw new IllegalArgumentException("\"" + archiveName + "\" is not a valid archive");
+      }
+      int numDims = archiveStream.readByte();
+      long[] dimSizes = new long[numDims];
+      int size = 1;  // for simplicity, we assume that total size does not exceeds Integer.MAX_VALUE
+      for (int i = 0; i < dimSizes.length; ++i) {
+        dimSizes[i] = archiveStream.readInt();
+        size *= dimSizes[i];
+      }
+      byte[] bytes = new byte[size];
+      archiveStream.readFully(bytes);
+      return NdArrays.wrap(Shape.of(dimSizes), DataBuffers.of(bytes, true, false));
     }
-    int numDims = archiveStream.readByte();
-    long[] dimSizes = new long[numDims];
-    int size = 1;  // for simplicity, we assume that total size does not exceeds Integer.MAX_VALUE
-    for (int i = 0; i < dimSizes.length; ++i) {
-      dimSizes[i] = archiveStream.readInt();
-      size *= dimSizes[i];
-    }
-    byte[] bytes = new byte[size];
-    archiveStream.readFully(bytes);
-    return NdArrays.wrap(Shape.of(dimSizes), DataBuffers.of(bytes, true, false));
   }
 }

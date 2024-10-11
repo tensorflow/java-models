@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ *  Copyright 2020, 2024 The TensorFlow Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,22 +18,7 @@ package org.tensorflow.model.examples.datasets;
 
 import org.tensorflow.ndarray.ByteNdArray;
 
-/** Batch of images for batch training. */
-public class ImageBatch {
-  
-  public ByteNdArray images() {
-    return images;
-  }
-  
-  public ByteNdArray labels() {
-    return labels;
-  }
-
-  public ImageBatch(ByteNdArray images, ByteNdArray labels) {
-    this.images = images;
-    this.labels = labels;
-  }
-
-  private final ByteNdArray images;
-  private final ByteNdArray labels;
-}
+/**
+ * Batch of images for batch training.
+ */
+public record ImageBatch(ByteNdArray images, ByteNdArray labels) { }

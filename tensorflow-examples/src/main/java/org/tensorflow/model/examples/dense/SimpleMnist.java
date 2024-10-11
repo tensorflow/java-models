@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ *  Copyright 2020, 2024 The TensorFlow Authors. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -113,12 +113,12 @@ public class SimpleMnist implements Runnable {
       ImageBatch testBatch = dataset.testBatch();
       try (TFloat32 testImages = preprocessImages(testBatch.images());
            TFloat32 testLabels = preprocessLabels(testBatch.labels());
-           TFloat32 accuracyValue = (TFloat32)session.runner()
+           var result = session.runner()
               .fetch(accuracy)
               .feed(images.asOutput(), testImages)
               .feed(labels.asOutput(), testLabels)
-              .run()
-              .get(0)) {
+              .run()) {
+        TFloat32 accuracyValue = (TFloat32) result.get(0);
         System.out.println("Accuracy: " + accuracyValue.getFloat());
       }
     }

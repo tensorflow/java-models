@@ -10,9 +10,10 @@
   <properties>
     <!-- The sample code requires at least JDK 1.8. -->
     <!-- The maven compiler plugin defaults to a lower version -->
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <tensorflow.version>0.4.0</tensorflow.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+    <tensorflow.version>1.0.0-rc.1</tensorflow.version>
   </properties>
 
   <dependencies>
