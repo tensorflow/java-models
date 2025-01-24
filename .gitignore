@@ -16,3 +16,8 @@ dist/
 .DS_Store
 models/
 outputs/
+
+# Gradle
+.gradle
+gradle
+gradlew*

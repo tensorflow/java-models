@@ -1,0 +1,28 @@
+plugins {
+    // Apply the application plugin to add support for building a CLI application in Java.
+    id 'application'
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+// Import dependencies for Tensorflow our application.
+def tfVersion = '1.0.0-rc.2'
+dependencies {
+    implementation group: 'org.tensorflow', name: 'tensorflow-core-platform', version: tfVersion
+    implementation group: 'org.tensorflow', name: 'tensorflow-framework', version: tfVersion
+}
+
+// Apply a specific Java toolchain to ease working on different environments.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'org.tensorflow.model.examples.dense.SimpleMnist'
+}
