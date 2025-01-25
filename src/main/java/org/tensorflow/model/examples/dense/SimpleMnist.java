@@ -34,13 +34,13 @@ import org.tensorflow.op.nn.Softmax;
 import org.tensorflow.types.TFloat32;
 import org.tensorflow.types.TInt64;
 
-public class SimpleMnist implements Runnable {
+public final class SimpleMnist implements Runnable {
   private static final String TRAINING_IMAGES_ARCHIVE = "mnist/train-images-idx3-ubyte.gz";
   private static final String TRAINING_LABELS_ARCHIVE = "mnist/train-labels-idx1-ubyte.gz";
   private static final String TEST_IMAGES_ARCHIVE = "mnist/t10k-images-idx3-ubyte.gz";
   private static final String TEST_LABELS_ARCHIVE = "mnist/t10k-labels-idx1-ubyte.gz";
 
-  public static void main(String[] args) {
+  public static void main() {
     MnistDataset dataset = MnistDataset.create(VALIDATION_SIZE, TRAINING_IMAGES_ARCHIVE, TRAINING_LABELS_ARCHIVE,
             TEST_IMAGES_ARCHIVE, TEST_LABELS_ARCHIVE);
 

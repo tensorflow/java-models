@@ -19,6 +19,7 @@ package org.tensorflow.model.examples.cnn.lenet;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
@@ -57,7 +58,7 @@ import org.tensorflow.types.TUint8;
 /**
  * Builds a LeNet-5 style CNN for MNIST.
  */
-public class CnnMnist {
+public final class CnnMnist {
 
   private static final Logger logger = Logger.getLogger(CnnMnist.class.getName());
 

@@ -16,17 +16,16 @@
  */
 package org.tensorflow.model.examples.datasets.mnist;
 
-import org.tensorflow.model.examples.datasets.ImageBatch;
-import org.tensorflow.model.examples.datasets.ImageBatchIterator;
-import org.tensorflow.ndarray.Shape;
-import org.tensorflow.ndarray.buffer.DataBuffers;
-import org.tensorflow.ndarray.ByteNdArray;
-import org.tensorflow.ndarray.NdArrays;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
+import org.tensorflow.model.examples.datasets.ImageBatch;
+import org.tensorflow.model.examples.datasets.ImageBatchIterator;
+import org.tensorflow.ndarray.ByteNdArray;
+import org.tensorflow.ndarray.NdArrays;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.ndarray.buffer.DataBuffers;
 import static org.tensorflow.ndarray.index.Indices.sliceFrom;
 import static org.tensorflow.ndarray.index.Indices.sliceTo;
 

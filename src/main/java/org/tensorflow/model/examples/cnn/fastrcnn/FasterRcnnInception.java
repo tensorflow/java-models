@@ -105,6 +105,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Result;
@@ -131,7 +132,7 @@ import org.tensorflow.types.TUint8;
  * faster_rcnn/inception_resnet_v2_1024x1024/1 to detect objects with a detection score greater than 0.3
  * Uses the DrawBounding boxes
  */
-public class FasterRcnnInception {
+public final class FasterRcnnInception {
 
     private final static String[] cocoLabels = new String[]{
             "person",

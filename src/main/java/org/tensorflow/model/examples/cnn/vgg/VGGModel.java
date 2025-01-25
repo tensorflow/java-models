@@ -19,6 +19,7 @@ package org.tensorflow.model.examples.cnn.vgg;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.tensorflow.Graph;
 import org.tensorflow.Operand;
 import org.tensorflow.Session;
