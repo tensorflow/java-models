@@ -19,7 +19,7 @@ Create a testimages folder then add some test images into a testimages folder
 To run the example add the input image and output image as parameters:
 
 ```shell
-java -cp target/tensorflow-examples-1.0.0-tfj-1.0.0-rc.2-with-dependencies.jar org.tensorflow.model.examples.cnn.fastrcnn.FasterRcnnInception testimages/image2.jpg image2rcnn.jpg
+java -cp target/tensorflow-examples-1.0.0-tfj-1.0.0-rc.2-jar-with-dependencies.jar org.tensorflow.model.examples.cnn.fastrcnn.FasterRcnnInception testimages/image2.jpg image2rcnn.jpg
 ```
 
 ### LeNet CNN
